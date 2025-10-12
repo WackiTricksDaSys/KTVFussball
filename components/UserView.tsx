@@ -253,7 +253,7 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
                               <div className="flex flex-col items-center">
                                 {reg?.status === 'yes' && <Check className="w-6 h-6" />}
                                 {reg?.status === 'no' && <X className="w-6 h-6" />}
-                                {reg?.guests > 0 && (
+                                {(reg?.guests ?? 0) > 0 && (
                                   <span className="text-xs mt-1 font-bold">+{reg.guests}</span>
                                 )}
                               </div>
