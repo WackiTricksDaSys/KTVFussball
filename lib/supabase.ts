@@ -38,6 +38,7 @@ export interface Registration {
   event_id: number;
   status: 'yes' | 'no' | 'pending';
   comment: string | null;
+  guests: number;
   created_at: string;
   updated_at: string;
 }
