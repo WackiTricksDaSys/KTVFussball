@@ -94,14 +94,19 @@ export async function runMigrations(): Promise<void> {
     console.log('🔄 Checking for pending migrations...');
     
     // First ensure schema_migrations table exists
-    const { error: tableError } = await supabase.rpc('exec_sql', {
-      sql: `CREATE TABLE IF NOT EXISTS schema_migrations (
-        id SERIAL PRIMARY KEY,
-        script_name VARCHAR(255) UNIQUE NOT NULL,
-        created_at TIMESTAMP DEFAULT NOW(),
-        executed_at TIMESTAMP DEFAULT NOW()
-      );`
-    }).catch(() => ({ error: null })); // Ignore if RPC doesn't exist
+    try {
+      await supabase.rpc('exec_sql', {
+        sql: `CREATE TABLE IF NOT EXISTS schema_migrations (
+          id SERIAL PRIMARY KEY,
+          script_name VARCHAR(255) UNIQUE NOT NULL,
+          created_at TIMESTAMP DEFAULT NOW(),
+          executed_at TIMESTAMP DEFAULT NOW()
+        );`
+      });
+    } catch (rpcError) {
+      // RPC might not exist, that's OK
+      console.log('⚠️ RPC not available, skipping automatic migrations');
+    }
     
     // Check which migrations have already been executed
     const { data: executedMigrations, error } = await supabase
@@ -120,23 +125,22 @@ export async function runMigrations(): Promise<void> {
         console.log(`🚀 Running migration: ${migration.name}`);
         
         // Execute the SQL
-        const { error: execError } = await supabase.rpc('exec_sql', {
-          sql: migration.sql
-        }).catch(() => ({ error: null }));
-        
-        if (execError) {
+        try {
+          await supabase.rpc('exec_sql', {
+            sql: migration.sql
+          });
+          
+          // Record the migration
+          await supabase
+            .from('schema_migrations')
+            .insert({ script_name: migration.name });
+          
+          console.log(`✅ Migration ${migration.name} completed`);
+        } catch (execError) {
           console.warn(`⚠️ Migration ${migration.name} may need manual execution`);
           console.warn('Please run migrations manually in Supabase SQL Editor');
           continue;
         }
-        
-        // Record the migration
-        await supabase
-          .from('schema_migrations')
-          .insert({ script_name: migration.name })
-          .catch(() => {}); // Ignore errors
-        
-        console.log(`✅ Migration ${migration.name} completed`);
       } else {
         console.log(`⏭️  Migration ${migration.name} already executed`);
       }
