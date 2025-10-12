@@ -254,7 +254,7 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
                                 {reg?.status === 'yes' && <Check className="w-6 h-6" />}
                                 {reg?.status === 'no' && <X className="w-6 h-6" />}
                                 {(reg?.guests ?? 0) > 0 && (
-                                  <span className="text-xs mt-1 font-bold">+{reg.guests}</span>
+                                  <span className="text-xs mt-1 font-bold">+{reg?.guests ?? 0}</span>
                                 )}
                               </div>
                               {locked && (
@@ -267,8 +267,8 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
                                 onClick={() => setCommentPopup({ 
                                   memberId: member.id, 
                                   eventId: event.id, 
-                                  comment: reg.comment || '', 
-                                  guests: reg.guests || 0,
+                                  comment: reg.comment ?? '', 
+                                  guests: reg.guests ?? 0,
                                   isOwn: isCurrentUser 
                                 })}
                                 className="absolute top-1 right-1 bg-white rounded-full p-1 shadow-lg hover:scale-110 transition"
@@ -282,8 +282,8 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
                                 onClick={() => setCommentPopup({ 
                                   memberId: member.id, 
                                   eventId: event.id, 
-                                  comment: reg?.comment || '', 
-                                  guests: reg?.guests || 0,
+                                  comment: reg?.comment ?? '', 
+                                  guests: reg?.guests ?? 0,
                                   isOwn: true 
                                 })}
                                 className="absolute bottom-1 right-1 text-xs bg-white px-2 py-1 rounded shadow hover:bg-gray-50"
