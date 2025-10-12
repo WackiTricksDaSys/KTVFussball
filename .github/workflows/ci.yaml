@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
+  build-and-test:
     runs-on: ubuntu-latest
 
     strategy:
@@ -26,18 +26,21 @@ jobs:
     - name: Install dependencies
       run: npm install
 
-    - name: Run linter
-      run: npm run lint
-      continue-on-error: true
-
-    - name: Run tests
-      run: npm test
+    # SCHRITT 1: Build zuerst (wichtigster Check!)
+    - name: Build project
+      run: npm run build
       env:
         NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
-    - name: Build project
-      run: npm run build
+    # SCHRITT 2: Linter (nur wenn Build erfolgreich)
+    - name: Run linter
+      run: npm run lint
+      continue-on-error: true
+
+    # SCHRITT 3: Tests (nur wenn Build erfolgreich)
+    - name: Run tests
+      run: npm test
       env:
         NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
