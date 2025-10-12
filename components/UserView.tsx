@@ -76,7 +76,7 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
     const newStatus = existing?.status === 'yes' ? 'no' : 'yes';
 
     try {
-      await upsertRegistration(currentUser.id, eventId, newStatus, existing?.comment, existing?.guests || 0);
+      await upsertRegistration(currentUser.id, eventId, newStatus, existing?.comment ?? undefined, existing?.guests || 0);
       
       if (existing) {
         setRegistrations(registrations.map(r =>
@@ -119,7 +119,7 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
     const status = existing?.status || 'pending';
 
     try {
-      await upsertRegistration(currentUser.id, eventId, status, comment, guests);
+      await upsertRegistration(currentUser.id, eventId, status, comment || undefined, guests);
       
       if (existing) {
         setRegistrations(registrations.map(r =>
