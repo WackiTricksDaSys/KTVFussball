@@ -8,7 +8,7 @@ interface LoginViewProps {
   onLogin: (user: Member) => void;
 }
 
-const HEADER_IMAGE = 'https://lh3.googleusercontent.com/d/1P2sNAGHzdN4jWfKrQ0-vJCAcq2iiM1Bl';
+const HEADER_IMAGE = '/header.png';
 
 export default function LoginView({ onLogin }: LoginViewProps) {
   const [email, setEmail] = useState('');
