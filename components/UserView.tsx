@@ -17,7 +17,7 @@ interface UserViewProps {
   onSwitchView: (view: 'admin') => void;
 }
 
-const HEADER_IMAGE = 'https://lh3.googleusercontent.com/d/1P2sNAGHzdN4jWfKrQ0-vJCAcq2iiM1Bl';
+const HEADER_IMAGE = '/header.png';
 
 export default function UserView({ currentUser, onLogout, onSwitchView }: UserViewProps) {
   const [members, setMembers] = useState<Member[]>([]);
