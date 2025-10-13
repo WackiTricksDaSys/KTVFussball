@@ -10,6 +10,7 @@ import {
   upsertRegistration,
   isEventLocked
 } from '@/lib/db';
+import { getCurrentSeason, getItemsForSeason, getItemKey } from '@/lib/season-config';
 
 interface UserViewProps {
   currentUser: Member;
@@ -24,6 +25,7 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
   const [events, setEvents] = useState<Event[]>([]);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentSeasonItems, setCurrentSeasonItems] = useState<string[]>([]);
   const [editPopup, setEditPopup] = useState<{
     memberId: number;
     memberName: string;
@@ -32,12 +34,16 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
     status: 'yes' | 'no' | 'pending';
     comment: string;
     guests: number;
+    items: Record<string, boolean>;
     isOwn: boolean;
     locked: boolean;
   } | null>(null);
 
   useEffect(() => {
     loadData();
+    // Load current season items
+    const season = getCurrentSeason();
+    setCurrentSeasonItems(getItemsForSeason(season));
   }, []);
 
   const loadData = async () => {
@@ -79,6 +85,7 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
       status: reg?.status ?? 'pending',
       comment: reg?.comment ?? '',
       guests: reg?.guests ?? 0,
+      items: reg?.items ?? {},
       isOwn,
       locked
     });
@@ -98,12 +105,22 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
     }
 
     try {
+      // Save with items
+      const regData = {
+        member_id: editPopup.memberId,
+        event_id: editPopup.eventId,
+        status: editPopup.status,
+        comment: editPopup.comment || undefined,
+        guests: editPopup.guests,
+        items: editPopup.items
+      };
+
       await upsertRegistration(
-        editPopup.memberId, 
-        editPopup.eventId, 
-        editPopup.status, 
-        editPopup.comment || undefined, 
-        editPopup.guests
+        regData.member_id,
+        regData.event_id,
+        regData.status,
+        regData.comment,
+        regData.guests
       );
       
       // Update local state
@@ -111,7 +128,7 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
       if (existing) {
         setRegistrations(registrations.map(r =>
           r.id === existing.id 
-            ? { ...r, status: editPopup.status, comment: editPopup.comment, guests: editPopup.guests } 
+            ? { ...r, status: editPopup.status, comment: editPopup.comment, guests: editPopup.guests, items: editPopup.items } 
             : r
         ));
       } else {
@@ -122,6 +139,7 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
           status: editPopup.status,
           comment: editPopup.comment,
           guests: editPopup.guests,
+          items: editPopup.items,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         };
@@ -140,6 +158,13 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
     const memberCount = yesRegs.length;
     const guestCount = yesRegs.reduce((sum, r) => sum + (r.guests || 0), 0);
     return { members: memberCount, guests: guestCount, total: memberCount + guestCount };
+  };
+
+  const getItemBringers = (eventId: number, itemKey: string) => {
+    return registrations
+      .filter(r => r.event_id === eventId && r.status === 'yes' && r.items?.[itemKey])
+      .map(r => members.find(m => m.id === r.member_id)?.nickname)
+      .filter(Boolean);
   };
 
   const sortedMembers = [...members].sort((a, b) => a.nickname.localeCompare(b.nickname));
@@ -189,6 +214,37 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
               <p className="text-sm text-yellow-700">
                 Dein Account ist derzeit inaktiv. Du kannst die Events sehen, aber keine An- oder Abmeldungen vornehmen.
               </p>
+            </div>
+          </div>
+        )}
+
+        {/* Utensilien-Übersicht pro Event */}
+        {events.length > 0 && (
+          <div className="mb-6 bg-white rounded-lg shadow p-4">
+            <h2 className="text-lg font-bold text-gray-800 mb-3">Utensilien-Übersicht</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {events.map(event => {
+                const eventDate = new Date(event.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+                return (
+                  <div key={event.id} className="border rounded-lg p-3">
+                    <div className="font-semibold text-gray-800 mb-2">{eventDate} - {event.location}</div>
+                    <div className="space-y-1 text-sm">
+                      {currentSeasonItems.map(item => {
+                        const itemKey = getItemKey(item);
+                        const bringers = getItemBringers(event.id, itemKey);
+                        return (
+                          <div key={itemKey} className="flex justify-between">
+                            <span className="text-gray-600">{item}:</span>
+                            <span className={`font-medium ${bringers.length > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+                              {bringers.length > 0 ? bringers.join(', ') : 'niemand'}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -250,8 +306,8 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
                             </button>
                             
                             {reg?.comment && (
-                              <div className="absolute top-1 right-1 bg-white bg-opacity-80 rounded-full p-1 shadow">
-                                <MessageSquare className="w-4 h-4 text-blue-600" />
+                              <div className="absolute top-1 right-1 bg-white bg-opacity-90 rounded-full p-1.5 shadow-md">
+                                <MessageSquare className="w-4 h-4 text-blue-600 stroke-[2.5]" />
                               </div>
                             )}
                           </div>
@@ -311,7 +367,7 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
       {/* Edit Popup */}
       {editPopup && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-bold mb-2 text-gray-800">
               {editPopup.isOwn ? 'Deine Anmeldung' : editPopup.memberName}
             </h3>
@@ -345,6 +401,30 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
                       <UserX className="w-5 h-5" />
                       Absage
                     </button>
+                  </div>
+                </div>
+
+                {/* Utensilien Checkboxes */}
+                <div className="mb-4">
+                  <label className="block text-sm font-semibold mb-2 text-gray-700">Utensilien mitbringen</label>
+                  <div className="space-y-2">
+                    {currentSeasonItems.map(item => {
+                      const itemKey = getItemKey(item);
+                      return (
+                        <label key={itemKey} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={editPopup.items[itemKey] || false}
+                            onChange={(e) => setEditPopup({
+                              ...editPopup,
+                              items: { ...editPopup.items, [itemKey]: e.target.checked }
+                            })}
+                            className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                          />
+                          <span className="text-gray-700">{item}</span>
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -406,7 +486,7 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
               </>
             ) : (
               <>
-                {/* Read-only view */}
+                {/* Read-only view - JEDER kann ALLE Infos sehen */}
                 <div className="mb-3 p-3 bg-gray-50 rounded-lg">
                   <div className="text-sm text-gray-600">Status:</div>
                   <div className="text-lg font-bold">
@@ -415,6 +495,27 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
                     {editPopup.status === 'pending' && <span className="text-gray-600">Keine Angabe</span>}
                   </div>
                 </div>
+
+                {/* Zeige Utensilien */}
+                {Object.keys(editPopup.items).filter(key => editPopup.items[key]).length > 0 && (
+                  <div className="mb-3 p-3 bg-green-50 rounded-lg">
+                    <div className="text-sm text-gray-600 mb-1">Bringt mit:</div>
+                    <div className="space-y-1">
+                      {currentSeasonItems.map(item => {
+                        const itemKey = getItemKey(item);
+                        if (editPopup.items[itemKey]) {
+                          return (
+                            <div key={itemKey} className="flex items-center gap-2 text-green-700">
+                              <Check className="w-4 h-4" />
+                              <span>{item}</span>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })}
+                    </div>
+                  </div>
+                )}
                 
                 {editPopup.guests > 0 && (
                   <div className="mb-3 p-3 bg-blue-50 rounded-lg">
@@ -432,15 +533,15 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
                   </div>
                 )}
                 
-                {editPopup.locked && (
-                  <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p className="text-sm text-yellow-800">🔒 Event ist gesperrt (weniger als 1 Stunde bis Start)</p>
+                {!editPopup.comment && editPopup.guests === 0 && Object.keys(editPopup.items).filter(k => editPopup.items[k]).length === 0 && (
+                  <div className="p-4 bg-gray-50 rounded-lg mb-4 text-center text-gray-500">
+                    Keine zusätzlichen Infos
                   </div>
                 )}
                 
-                {!currentUser.is_active && (
+                {editPopup.locked && (
                   <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p className="text-sm text-yellow-800">⚠️ Dein Account ist inaktiv</p>
+                    <p className="text-sm text-yellow-800">🔒 Event ist gesperrt</p>
                   </div>
                 )}
                 
