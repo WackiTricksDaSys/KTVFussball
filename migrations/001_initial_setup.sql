@@ -58,14 +58,28 @@ ALTER TABLE members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE registrations ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies
+-- RLS Policies - Allow all operations
 DROP POLICY IF EXISTS "Users can view all members" ON members;
 DROP POLICY IF EXISTS "Users can view all events" ON events;
 DROP POLICY IF EXISTS "Users can view all registrations" ON registrations;
 
+-- Members - Full access
 CREATE POLICY "Users can view all members" ON members FOR SELECT USING (true);
+CREATE POLICY "Users can insert members" ON members FOR INSERT WITH CHECK (true);
+CREATE POLICY "Users can update members" ON members FOR UPDATE USING (true);
+CREATE POLICY "Users can delete members" ON members FOR DELETE USING (true);
+
+-- Events - Full access
 CREATE POLICY "Users can view all events" ON events FOR SELECT USING (true);
+CREATE POLICY "Users can insert events" ON events FOR INSERT WITH CHECK (true);
+CREATE POLICY "Users can update events" ON events FOR UPDATE USING (true);
+CREATE POLICY "Users can delete events" ON events FOR DELETE USING (true);
+
+-- Registrations - Full access
 CREATE POLICY "Users can view all registrations" ON registrations FOR SELECT USING (true);
+CREATE POLICY "Users can insert registrations" ON registrations FOR INSERT WITH CHECK (true);
+CREATE POLICY "Users can update registrations" ON registrations FOR UPDATE USING (true);
+CREATE POLICY "Users can delete registrations" ON registrations FOR DELETE USING (true);
 
 -- ============================================
 -- NEU: Initial Admin User erstellen
