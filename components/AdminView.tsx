@@ -1,7 +1,8 @@
 'use client';
 
+import { supabase } from '@/lib/supabase';
 import { useState, useEffect } from 'react';
-import { Users, Calendar, LogOut, Database } from 'lucide-react';
+import { Users, Calendar, LogOut, Database, Sun, Snowflake } from 'lucide-react';
 import { Member, Event } from '@/lib/supabase';
 import MigrationsPanel from './MigrationsPanel';
 import { 
@@ -13,6 +14,7 @@ import {
   deleteEvent,
   getAllRegistrations
 } from '@/lib/db';
+import { getCurrentSeason, getItemsForSeason, Season } from '@/lib/season-config';
 
 interface AdminViewProps {
   currentUser: Member;
@@ -31,9 +33,11 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
   const [newEvent, setNewEvent] = useState({ date: '', timeFrom: '', timeTo: '', location: '' });
   const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
   const [showMigrations, setShowMigrations] = useState(false);
+  const [currentSeason, setCurrentSeason] = useState<Season>('summer');
 
   useEffect(() => {
     loadData();
+    loadCurrentSeason();
   }, []);
 
   const loadData = async () => {
@@ -50,6 +54,45 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
       console.error('Error loading data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadCurrentSeason = async () => {
+    // Try to load from settings table, fallback to auto-detection
+    try {
+      const { data } = await supabase
+        .from('settings')
+        .select('value')
+        .eq('key', 'current_season')
+        .single();
+      
+      if (data) {
+        setCurrentSeason(data.value as Season);
+      } else {
+        setCurrentSeason(getCurrentSeason());
+      }
+    } catch {
+      setCurrentSeason(getCurrentSeason());
+    }
+  };
+
+  const handleSeasonChange = async (newSeason: Season) => {
+    try {
+      await supabase
+        .from('settings')
+        .upsert({ 
+          key: 'current_season', 
+          value: newSeason,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'key'
+        });
+      
+      setCurrentSeason(newSeason);
+      alert(`Saison erfolgreich auf ${newSeason === 'summer' ? 'Sommer' : 'Winter'} umgestellt!`);
+    } catch (error) {
+      alert('Fehler beim Umstellen der Saison');
+      console.error(error);
     }
   };
 
@@ -107,6 +150,8 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
     new Date(a.date).getTime() - new Date(b.date).getTime()
   );
 
+  const seasonItems = getItemsForSeason(currentSeason);
+
   if (loading) {
     return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Lädt...</div>;
   }
@@ -153,6 +198,47 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
         {showMigrations && (
           <MigrationsPanel />
         )}
+
+        {/* Season Toggle */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-xl font-bold mb-4 text-gray-800">Saison-Verwaltung</h2>
+          
+          <div className="flex gap-4 mb-4">
+            <button
+              onClick={() => handleSeasonChange('summer')}
+              className={`flex-1 px-6 py-4 rounded-lg font-semibold transition flex items-center justify-center gap-3 ${
+                currentSeason === 'summer' 
+                  ? 'bg-yellow-500 text-white shadow-lg' 
+                  : 'bg-gray-100 hover:bg-gray-200'
+              }`}
+            >
+              <Sun className="w-6 h-6" />
+              Sommer
+            </button>
+            <button
+              onClick={() => handleSeasonChange('winter')}
+              className={`flex-1 px-6 py-4 rounded-lg font-semibold transition flex items-center justify-center gap-3 ${
+                currentSeason === 'winter' 
+                  ? 'bg-blue-500 text-white shadow-lg' 
+                  : 'bg-gray-100 hover:bg-gray-200'
+              }`}
+            >
+              <Snowflake className="w-6 h-6" />
+              Winter
+            </button>
+          </div>
+
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <h3 className="font-semibold text-gray-700 mb-2">
+              Aktuelle Utensilien ({currentSeason === 'summer' ? 'Sommer' : 'Winter'}):
+            </h3>
+            <ul className="list-disc list-inside text-gray-600 space-y-1">
+              {seasonItems.map(item => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
 
         {/* Generated Password Popup */}
         {generatedPassword && (
