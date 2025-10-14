@@ -1,7 +1,7 @@
-'use client';
+ 'use client';
 
 import { useState, useEffect } from 'react';
-import { Calendar, LogOut, MessageSquare, Check, X, AlertCircle, UserCheck, UserX } from 'lucide-react';
+import { LogOut, MessageSquare, Check, X, AlertCircle, UserCheck, UserX } from 'lucide-react';
 import { Member, Event, Registration } from '@/lib/supabase';
 import { 
   getAllMembers, 
@@ -41,7 +41,6 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
 
   useEffect(() => {
     loadData();
-    // Load current season items
     const season = getCurrentSeason();
     setCurrentSeasonItems(getItemsForSeason(season));
   }, []);
@@ -77,11 +76,9 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
       memberName: member.nickname,
       eventId: event.id,
       eventDate: new Date(event.date).toLocaleDateString('de-DE', { 
-        weekday: 'short',
         day: '2-digit', 
-        month: '2-digit',
-        year: 'numeric'
-      }),
+        month: '2-digit'
+      }) + ' ' + event.time_from + '-' + event.time_to + ' ' + event.location,
       status: reg?.status ?? 'pending',
       comment: reg?.comment ?? '',
       guests: reg?.guests ?? 0,
@@ -105,25 +102,15 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
     }
 
     try {
-      // Save with items
-      const regData = {
-        member_id: editPopup.memberId,
-        event_id: editPopup.eventId,
-        status: editPopup.status,
-        comment: editPopup.comment || undefined,
-        guests: editPopup.guests,
-        items: editPopup.items
-      };
-
       await upsertRegistration(
-        regData.member_id,
-        regData.event_id,
-        regData.status,
-        regData.comment,
-        regData.guests
+        editPopup.memberId,
+        editPopup.eventId,
+        editPopup.status,
+        editPopup.comment || undefined,
+        editPopup.guests,
+        editPopup.items
       );
       
-      // Update local state
       const existing = getRegistration(editPopup.memberId, editPopup.eventId);
       if (existing) {
         setRegistrations(registrations.map(r =>
@@ -153,13 +140,6 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
     }
   };
 
-  const countYes = (eventId: number) => {
-    const yesRegs = registrations.filter(r => r.event_id === eventId && r.status === 'yes');
-    const memberCount = yesRegs.length;
-    const guestCount = yesRegs.reduce((sum, r) => sum + (r.guests || 0), 0);
-    return { members: memberCount, guests: guestCount, total: memberCount + guestCount };
-  };
-
   const getItemBringers = (eventId: number, itemKey: string) => {
     return registrations
       .filter(r => r.event_id === eventId && r.status === 'yes' && r.items?.[itemKey])
@@ -185,10 +165,10 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
           />
         </div>
         <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-          <h1 className="text-xl font-semibold text-gray-800">Anmeldung Events</h1>
+          <h1 className="text-xl font-semibold text-gray-800">Anmeldung</h1>
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-600">
-              Hallo, <span className="font-semibold">{currentUser.nickname}</span>
+              <span className="font-semibold">{currentUser.nickname}</span>
             </span>
             {currentUser.is_admin && (
               <button
@@ -205,163 +185,141 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto p-6">
+      <div className="max-w-7xl mx-auto p-4">
         {!currentUser.is_active && (
-          <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start gap-3">
+          <div className="mb-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-start gap-2">
             <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
             <div>
-              <h3 className="font-semibold text-yellow-800 mb-1">Account inaktiv</h3>
-              <p className="text-sm text-yellow-700">
-                Dein Account ist derzeit inaktiv. Du kannst die Events sehen, aber keine An- oder Abmeldungen vornehmen.
+              <h3 className="font-semibold text-yellow-800 text-sm">Account inaktiv</h3>
+              <p className="text-xs text-yellow-700">
+                Du kannst die Events sehen, aber keine Änderungen vornehmen.
               </p>
             </div>
           </div>
         )}
 
-        {/* Utensilien-Übersicht pro Event */}
+        {/* Utensilien-Übersicht - Horizontal wie im Screenshot */}
         {events.length > 0 && (
-          <div className="mb-6 bg-white rounded-lg shadow p-4">
-            <h2 className="text-lg font-bold text-gray-800 mb-3">Utensilien-Übersicht</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {events.map(event => {
-                const eventDate = new Date(event.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
-                return (
-                  <div key={event.id} className="border rounded-lg p-3">
-                    <div className="font-semibold text-gray-800 mb-2">{eventDate} - {event.location}</div>
-                    <div className="space-y-1 text-sm">
-                      {currentSeasonItems.map(item => {
-                        const itemKey = getItemKey(item);
-                        const bringers = getItemBringers(event.id, itemKey);
+          <div className="mb-4">
+            {events.map(event => {
+              const eventDate = new Date(event.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+              return (
+                <div key={event.id} className="mb-6">
+                  <div className="bg-white rounded-lg shadow overflow-hidden">
+                    {/* Event Header */}
+                    <div className="bg-gray-100 px-4 py-2 font-semibold text-gray-800 text-sm">
+                      {eventDate} {event.time_from}-{event.time_to} {event.location}
+                    </div>
+                    
+                    {/* Utensilien Tabelle */}
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 bg-gray-50">Spieler</th>
+                            {sortedMembers.map(m => (
+                              <th key={m.id} className="px-2 py-2 text-center text-xs font-medium text-gray-600 bg-gray-50">
+                                {m.nickname}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {currentSeasonItems.map(item => {
+                            const itemKey = getItemKey(item);
+                            return (
+                              <tr key={itemKey} className="border-b hover:bg-gray-50">
+                                <td className="px-4 py-2 font-medium text-gray-700">{item}</td>
+                                {sortedMembers.map(member => {
+                                  const reg = getRegistration(member.id, event.id);
+                                  const hasBringer = reg?.items?.[itemKey];
+                                  return (
+                                    <td key={member.id} className="px-2 py-2 text-center">
+                                      {hasBringer ? (
+                                        <span className="text-green-600 font-bold text-lg">{member.nickname}</span>
+                                      ) : (
+                                        <span className="text-gray-300">—</span>
+                                      )}
+                                    </td>
+                                  );
+                                })}
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Spieler Status */}
+                    <div className="p-4 space-y-2">
+                      {sortedMembers.map(member => {
+                        const reg = getRegistration(member.id, event.id);
+                        const isCurrentUser = member.id === currentUser.id;
+                        const locked = isEventLocked(event);
+                        
                         return (
-                          <div key={itemKey} className="flex justify-between">
-                            <span className="text-gray-600">{item}:</span>
-                            <span className={`font-medium ${bringers.length > 0 ? 'text-green-600' : 'text-gray-400'}`}>
-                              {bringers.length > 0 ? bringers.join(', ') : 'niemand'}
-                            </span>
+                          <div 
+                            key={member.id}
+                            onClick={() => handleCellClick(member, event)}
+                            className={`flex items-center gap-2 p-3 rounded-lg cursor-pointer transition ${
+                              isCurrentUser ? 'bg-blue-50 ring-2 ring-blue-200' : 'bg-gray-50 hover:bg-gray-100'
+                            }`}
+                          >
+                            <div className="flex-1 font-semibold text-gray-800">
+                              {member.nickname}
+                              {isCurrentUser && <span className="ml-2 text-blue-600 text-xs">(Du)</span>}
+                            </div>
+                            
+                            {/* Status Buttons */}
+                            <div className="flex items-center gap-2">
+                              {reg?.comment && (
+                                <div className="relative">
+                                  <MessageSquare className="w-5 h-5 text-blue-600 stroke-[2.5]" />
+                                </div>
+                              )}
+                              
+                              {reg?.guests > 0 && (
+                                <div className="px-2 py-1 bg-blue-100 text-blue-700 rounded font-bold text-xs">
+                                  +{reg.guests}
+                                </div>
+                              )}
+                              
+                              {reg?.status === 'yes' && (
+                                <div className="w-16 h-16 bg-green-500 rounded-lg flex items-center justify-center">
+                                  <Check className="w-8 h-8 text-white" />
+                                </div>
+                              )}
+                              
+                              {reg?.status === 'no' && (
+                                <div className="w-16 h-16 bg-red-500 rounded-lg flex items-center justify-center">
+                                  <X className="w-8 h-8 text-white" />
+                                </div>
+                              )}
+                              
+                              {reg?.status === 'pending' && (
+                                <div className="w-16 h-16 bg-gray-200 rounded-lg"></div>
+                              )}
+                              
+                              {locked && (
+                                <span className="text-xs text-gray-500">🔒</span>
+                              )}
+                            </div>
                           </div>
                         );
                       })}
                     </div>
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })}
           </div>
         )}
-
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-4 py-3 text-left sticky left-0 bg-gray-100 z-10 text-gray-700">Spieler</th>
-                  {events.map(e => (
-                    <th key={e.id} className="px-4 py-3 text-center min-w-[120px]">
-                      <div className="font-bold text-gray-800">
-                        {new Date(e.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
-                      </div>
-                      <div className="text-xs text-gray-600">{e.time_from}-{e.time_to}</div>
-                      <div className="text-xs text-gray-500">{e.location}</div>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {sortedMembers.map(member => (
-                  <tr key={member.id} className={member.id === currentUser.id ? 'bg-blue-50' : ''}>
-                    <td className="px-4 py-3 font-semibold sticky left-0 bg-white z-10">
-                      {member.nickname}
-                      {member.id === currentUser.id && (
-                        <span className="ml-2 text-blue-600 text-sm">(Du)</span>
-                      )}
-                    </td>
-                    {events.map(event => {
-                      const reg = getRegistration(member.id, event.id);
-                      const isCurrentUser = member.id === currentUser.id;
-                      const locked = isEventLocked(event);
-                      
-                      return (
-                        <td key={event.id} className="px-2 py-2 text-center">
-                          <div className="relative">
-                            <button
-                              onClick={() => handleCellClick(member, event)}
-                              className={`w-full h-16 rounded-lg flex items-center justify-center transition relative ${
-                                reg?.status === 'yes' ? 'bg-green-500 text-white' :
-                                reg?.status === 'no' ? 'bg-red-500 text-white' :
-                                'bg-gray-100'
-                              } ${isCurrentUser ? 'hover:opacity-80 cursor-pointer' : 'cursor-pointer'} ${
-                                locked ? 'opacity-60' : ''
-                              }`}
-                            >
-                              <div className="flex flex-col items-center">
-                                {reg?.status === 'yes' && <Check className="w-6 h-6" />}
-                                {reg?.status === 'no' && <X className="w-6 h-6" />}
-                                {(reg?.guests ?? 0) > 0 && (
-                                  <span className="text-xs mt-1 font-bold">+{reg?.guests ?? 0}</span>
-                                )}
-                              </div>
-                              {locked && (
-                                <span className="absolute top-1 left-1 text-xs bg-white px-1 rounded text-gray-600">🔒</span>
-                              )}
-                            </button>
-                            
-                            {reg?.comment && (
-                              <div className="absolute top-1 right-1 bg-white bg-opacity-90 rounded-full p-1.5 shadow-md">
-                                <MessageSquare className="w-4 h-4 text-blue-600 stroke-[2.5]" />
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-                
-                <tr className="bg-gray-100 font-bold">
-                  <td className="px-4 py-3 sticky left-0 bg-gray-100 z-10">Total Zusagen</td>
-                  {events.map(e => {
-                    const counts = countYes(e.id);
-                    return (
-                      <td key={e.id} className="px-4 py-3 text-center">
-                        <div className="text-xl text-blue-600">{counts.total}</div>
-                        {counts.guests > 0 && (
-                          <div className="text-xs text-gray-600">
-                            ({counts.members} + {counts.guests} Gäste)
-                          </div>
-                        )}
-                      </td>
-                    );
-                  })}
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
 
         {events.length === 0 && (
           <div className="text-center py-12 text-gray-500">
             Keine zukünftigen Events vorhanden
           </div>
         )}
-
-        <div className="mt-4 flex justify-center gap-6 text-sm text-gray-600">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-green-500 rounded"></div>
-            <span>Zusage</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-red-500 rounded"></div>
-            <span>Absage</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-gray-200 rounded"></div>
-            <span>Keine Angabe</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span>🔒</span>
-            <span>Gesperrt</span>
-          </div>
-        </div>
       </div>
 
       {/* Edit Popup */}
@@ -486,7 +444,7 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
               </>
             ) : (
               <>
-                {/* Read-only view - JEDER kann ALLE Infos sehen */}
+                {/* Read-only view */}
                 <div className="mb-3 p-3 bg-gray-50 rounded-lg">
                   <div className="text-sm text-gray-600">Status:</div>
                   <div className="text-lg font-bold">
@@ -496,7 +454,6 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
                   </div>
                 </div>
 
-                {/* Zeige Utensilien */}
                 {Object.keys(editPopup.items).filter(key => editPopup.items[key]).length > 0 && (
                   <div className="mb-3 p-3 bg-green-50 rounded-lg">
                     <div className="text-sm text-gray-600 mb-1">Bringt mit:</div>
@@ -530,18 +487,6 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
                     <div className="p-3 bg-gray-50 rounded-lg">
                       <p className="text-gray-700">{editPopup.comment}</p>
                     </div>
-                  </div>
-                )}
-                
-                {!editPopup.comment && editPopup.guests === 0 && Object.keys(editPopup.items).filter(k => editPopup.items[k]).length === 0 && (
-                  <div className="p-4 bg-gray-50 rounded-lg mb-4 text-center text-gray-500">
-                    Keine zusätzlichen Infos
-                  </div>
-                )}
-                
-                {editPopup.locked && (
-                  <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p className="text-sm text-yellow-800">🔒 Event ist gesperrt</p>
                   </div>
                 )}
                 
