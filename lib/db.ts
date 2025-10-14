@@ -172,7 +172,8 @@ export async function upsertRegistration(
   eventId: number, 
   status: 'yes' | 'no' | 'pending',
   comment?: string,
-  guests?: number
+  guests?: number,
+  items?: Record<string, boolean>  // ⬅️ 6. Parameter hinzufügen!
 ): Promise<Registration> {
   const { data, error } = await supabase
     .from('registrations')
@@ -182,6 +183,7 @@ export async function upsertRegistration(
       status,
       comment: comment || null,
       guests: guests || 0,
+      items: items || null,  // ⬅️ items speichern!
       updated_at: new Date().toISOString()
     }, {
       onConflict: 'member_id,event_id'
