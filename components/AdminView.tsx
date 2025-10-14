@@ -88,7 +88,7 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
   };
 
   const handleAddEvent = async () => {
-    if (!newEvent.name || !newEvent.location || !newEvent.timeFrom || !newEvent.timeTo || 
+    if (!newEvent.location || !newEvent.timeFrom || !newEvent.timeTo || 
         !newEvent.dateFrom || !newEvent.dateTo || newEvent.weekdays.length === 0) {
       alert('Bitte alle Felder ausfüllen und mindestens einen Wochentag auswählen');
       return;
@@ -117,8 +117,7 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
             dateStr, 
             newEvent.timeFrom, 
             newEvent.timeTo, 
-            newEvent.location,
-            newEvent.name
+            newEvent.location
           );
           createdEvents.push(event);
         }
@@ -132,7 +131,6 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
       ));
       
       setNewEvent({ 
-        name: '', 
         location: '', 
         timeFrom: '', 
         timeTo: '', 
@@ -325,17 +323,6 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
             <h3 className="font-semibold mb-3 text-gray-700">Neue Events erstellen</h3>
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Event-Name</label>
-                <input
-                  type="text"
-                  placeholder="z.B. Training, Turnier"
-                  value={newEvent.name}
-                  onChange={(e) => setNewEvent({...newEvent, name: e.target.value})}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              
-              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Ort</label>
                 <input
                   type="text"
@@ -432,11 +419,6 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
               <div key={e.id} className="p-4 border rounded-lg hover:shadow-md transition">
                 <div className="flex justify-between items-center">
                   <div>
-                    {e.name && (
-                      <div className="text-sm font-semibold text-blue-600 mb-1">
-                        {e.name}
-                      </div>
-                    )}
                     <div className="font-bold text-lg text-gray-800">
                       {new Date(e.date).toLocaleDateString('de-DE', { 
                         weekday: 'short',
