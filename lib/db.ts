@@ -115,14 +115,21 @@ export async function getFutureEvents(): Promise<Event[]> {
   return data || [];
 }
 
-export async function createEvent(date: string, timeFrom: string, timeTo: string, location: string): Promise<Event> {
+export async function createEvent(
+  date: string, 
+  timeFrom: string, 
+  timeTo: string, 
+  location: string,
+  name?: string
+): Promise<Event> {
   const { data, error } = await supabase
     .from('events')
     .insert({
       date,
       time_from: timeFrom,
       time_to: timeTo,
-      location
+      location,
+      name: name || null
     })
     .select()
     .single();
@@ -167,8 +174,7 @@ export async function upsertRegistration(
   eventId: number, 
   status: 'yes' | 'no' | 'pending',
   comment?: string,
-  guests?: number,
-  items?: Record<string, boolean>
+  guests?: number
 ): Promise<Registration> {
   const { data, error } = await supabase
     .from('registrations')
@@ -178,7 +184,6 @@ export async function upsertRegistration(
       status,
       comment: comment || null,
       guests: guests || 0,
-      items: items || {},
       updated_at: new Date().toISOString()
     }, {
       onConflict: 'member_id,event_id'
