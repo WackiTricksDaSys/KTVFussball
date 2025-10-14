@@ -39,6 +39,7 @@ export interface Registration {
   status: 'yes' | 'no' | 'pending';
   comment: string | null;
   guests: number;
+  items?: Record<string, boolean>; // Optional: z.B. { "ball": true, "pumpe": false }
   created_at: string;
   updated_at: string;
 }
