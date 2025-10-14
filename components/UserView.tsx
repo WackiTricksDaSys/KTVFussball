@@ -1,4 +1,4 @@
- 'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import { LogOut, MessageSquare, Check, X, AlertCircle, UserCheck, UserX } from 'lucide-react';
@@ -278,9 +278,9 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
                                 </div>
                               )}
                               
-                              {reg?.guests > 0 && (
+                              {(reg?.guests ?? 0) > 0 && (
                                 <div className="px-2 py-1 bg-blue-100 text-blue-700 rounded font-bold text-xs">
-                                  +{reg.guests}
+                                  +{reg?.guests ?? 0}
                                 </div>
                               )}
                               
