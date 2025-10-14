@@ -119,8 +119,7 @@ export async function createEvent(
   date: string, 
   timeFrom: string, 
   timeTo: string, 
-  location: string,
-  name?: string
+  location: string
 ): Promise<Event> {
   const { data, error } = await supabase
     .from('events')
@@ -128,8 +127,7 @@ export async function createEvent(
       date,
       time_from: timeFrom,
       time_to: timeTo,
-      location,
-      name: name || null
+      location
     })
     .select()
     .single();
