@@ -1,8 +1,7 @@
 'use client';
 
-import { supabase } from '@/lib/supabase';
 import { useState, useEffect } from 'react';
-import { Users, Calendar, LogOut, Database, Sun, Snowflake } from 'lucide-react';
+import { Users, Calendar, LogOut, Database } from 'lucide-react';
 import { Member, Event } from '@/lib/supabase';
 import MigrationsPanel from './MigrationsPanel';
 import { 
@@ -14,7 +13,6 @@ import {
   deleteEvent,
   getAllRegistrations
 } from '@/lib/db';
-import { getCurrentSeason, getItemsForSeason, Season } from '@/lib/season-config';
 
 interface AdminViewProps {
   currentUser: Member;
@@ -22,7 +20,7 @@ interface AdminViewProps {
   onSwitchView: (view: 'user') => void;
 }
 
-const HEADER_IMAGE = '/header.png';
+const HEADER_IMAGE = 'https://lh3.googleusercontent.com/d/1P2sNAGHzdN4jWfKrQ0-vJCAcq2iiM1Bl';
 
 export default function AdminView({ currentUser, onLogout, onSwitchView }: AdminViewProps) {
   const [members, setMembers] = useState<Member[]>([]);
@@ -30,14 +28,20 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
   const [registrations, setRegistrations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [newMember, setNewMember] = useState({ nickname: '', email: '' });
-  const [newEvent, setNewEvent] = useState({ date: '', timeFrom: '', timeTo: '', location: '' });
+  const [newEvent, setNewEvent] = useState({ 
+    name: '',
+    location: '', 
+    timeFrom: '', 
+    timeTo: '', 
+    dateFrom: '', 
+    dateTo: '', 
+    weekdays: [] as number[] 
+  });
   const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
   const [showMigrations, setShowMigrations] = useState(false);
-  const [currentSeason, setCurrentSeason] = useState<Season>('summer');
 
   useEffect(() => {
     loadData();
-    loadCurrentSeason();
   }, []);
 
   const loadData = async () => {
@@ -54,45 +58,6 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
       console.error('Error loading data:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadCurrentSeason = async () => {
-    // Try to load from settings table, fallback to auto-detection
-    try {
-      const { data } = await supabase
-        .from('settings')
-        .select('value')
-        .eq('key', 'current_season')
-        .single();
-      
-      if (data) {
-        setCurrentSeason(data.value as Season);
-      } else {
-        setCurrentSeason(getCurrentSeason());
-      }
-    } catch {
-      setCurrentSeason(getCurrentSeason());
-    }
-  };
-
-  const handleSeasonChange = async (newSeason: Season) => {
-    try {
-      await supabase
-        .from('settings')
-        .upsert({ 
-          key: 'current_season', 
-          value: newSeason,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'key'
-        });
-      
-      setCurrentSeason(newSeason);
-      alert(`Saison erfolgreich auf ${newSeason === 'summer' ? 'Sommer' : 'Winter'} umgestellt!`);
-    } catch (error) {
-      alert('Fehler beim Umstellen der Saison');
-      console.error(error);
     }
   };
 
@@ -124,18 +89,77 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
   };
 
   const handleAddEvent = async () => {
-    if (!newEvent.date || !newEvent.timeFrom || !newEvent.timeTo || !newEvent.location) {
-      alert('Bitte alle Felder ausfüllen');
+    if (!newEvent.name || !newEvent.location || !newEvent.timeFrom || !newEvent.timeTo || 
+        !newEvent.dateFrom || !newEvent.dateTo || newEvent.weekdays.length === 0) {
+      alert('Bitte alle Felder ausfüllen und mindestens einen Wochentag auswählen');
       return;
     }
 
     try {
-      const event = await createEvent(newEvent.date, newEvent.timeFrom, newEvent.timeTo, newEvent.location);
-      setEvents([...events, event]);
-      setNewEvent({ date: '', timeFrom: '', timeTo: '', location: '' });
+      const startDate = new Date(newEvent.dateFrom);
+      const endDate = new Date(newEvent.dateTo);
+      
+      if (startDate > endDate) {
+        alert('Start-Datum muss vor End-Datum liegen');
+        return;
+      }
+
+      const createdEvents = [];
+      const currentDate = new Date(startDate);
+      
+      // Iteriere durch alle Tage im Range
+      while (currentDate <= endDate) {
+        const dayOfWeek = currentDate.getDay(); // 0 = Sonntag, 1 = Montag, etc.
+        
+        // Prüfe ob dieser Wochentag ausgewählt wurde
+        if (newEvent.weekdays.includes(dayOfWeek)) {
+          const dateStr = currentDate.toISOString().split('T')[0];
+          const event = await createEvent(
+            dateStr, 
+            newEvent.timeFrom, 
+            newEvent.timeTo, 
+            newEvent.location,
+            newEvent.name
+          );
+          createdEvents.push(event);
+        }
+        
+        // Nächster Tag
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+      
+      setEvents([...events, ...createdEvents].sort((a, b) => 
+        new Date(a.date).getTime() - new Date(b.date).getTime()
+      ));
+      
+      setNewEvent({ 
+        name: '', 
+        location: '', 
+        timeFrom: '', 
+        timeTo: '', 
+        dateFrom: '', 
+        dateTo: '', 
+        weekdays: [] 
+      });
+      
+      alert(`${createdEvents.length} Event(s) erfolgreich erstellt!`);
     } catch (error) {
-      alert('Fehler beim Erstellen des Events');
+      alert('Fehler beim Erstellen der Events');
       console.error(error);
+    }
+  };
+
+  const toggleWeekday = (day: number) => {
+    if (newEvent.weekdays.includes(day)) {
+      setNewEvent({
+        ...newEvent,
+        weekdays: newEvent.weekdays.filter(d => d !== day)
+      });
+    } else {
+      setNewEvent({
+        ...newEvent,
+        weekdays: [...newEvent.weekdays, day].sort()
+      });
     }
   };
 
@@ -149,8 +173,6 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
   const futureEvents = events.filter(e => new Date(e.date) >= new Date()).sort((a, b) => 
     new Date(a.date).getTime() - new Date(b.date).getTime()
   );
-
-  const seasonItems = getItemsForSeason(currentSeason);
 
   if (loading) {
     return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Lädt...</div>;
@@ -199,47 +221,6 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
           <MigrationsPanel />
         )}
 
-        {/* Season Toggle */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-bold mb-4 text-gray-800">Saison-Verwaltung</h2>
-          
-          <div className="flex gap-4 mb-4">
-            <button
-              onClick={() => handleSeasonChange('summer')}
-              className={`flex-1 px-6 py-4 rounded-lg font-semibold transition flex items-center justify-center gap-3 ${
-                currentSeason === 'summer' 
-                  ? 'bg-yellow-500 text-white shadow-lg' 
-                  : 'bg-gray-100 hover:bg-gray-200'
-              }`}
-            >
-              <Sun className="w-6 h-6" />
-              Sommer
-            </button>
-            <button
-              onClick={() => handleSeasonChange('winter')}
-              className={`flex-1 px-6 py-4 rounded-lg font-semibold transition flex items-center justify-center gap-3 ${
-                currentSeason === 'winter' 
-                  ? 'bg-blue-500 text-white shadow-lg' 
-                  : 'bg-gray-100 hover:bg-gray-200'
-              }`}
-            >
-              <Snowflake className="w-6 h-6" />
-              Winter
-            </button>
-          </div>
-
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <h3 className="font-semibold text-gray-700 mb-2">
-              Aktuelle Utensilien ({currentSeason === 'summer' ? 'Sommer' : 'Winter'}):
-            </h3>
-            <ul className="list-disc list-inside text-gray-600 space-y-1">
-              {seasonItems.map(item => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-        </div>
-
         {/* Generated Password Popup */}
         {generatedPassword && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -268,23 +249,23 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
           
           <div className="mb-6 p-4 bg-gray-50 rounded-lg">
             <h3 className="font-semibold mb-3 text-gray-700">Neues Mitglied hinzufügen</h3>
-            <div className="flex gap-3">
+            <div className="space-y-3">
               <input
                 placeholder="Nickname"
                 value={newMember.nickname}
                 onChange={(e) => setNewMember({...newMember, nickname: e.target.value})}
-                className="flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
               />
               <input
                 type="email"
                 placeholder="E-Mail"
                 value={newMember.email}
                 onChange={(e) => setNewMember({...newMember, email: e.target.value})}
-                className="flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
               />
               <button
                 onClick={handleAddMember}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold"
               >
                 Hinzufügen
               </button>
@@ -342,40 +323,108 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
           </h2>
           
           <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-            <h3 className="font-semibold mb-3 text-gray-700">Neues Event erstellen</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                type="date"
-                value={newEvent.date}
-                onChange={(e) => setNewEvent({...newEvent, date: e.target.value})}
-                className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
-              <input
-                placeholder="Ort"
-                value={newEvent.location}
-                onChange={(e) => setNewEvent({...newEvent, location: e.target.value})}
-                className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
-              <input
-                type="time"
-                placeholder="Von"
-                value={newEvent.timeFrom}
-                onChange={(e) => setNewEvent({...newEvent, timeFrom: e.target.value})}
-                className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
-              <input
-                type="time"
-                placeholder="Bis"
-                value={newEvent.timeTo}
-                onChange={(e) => setNewEvent({...newEvent, timeTo: e.target.value})}
-                className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
+            <h3 className="font-semibold mb-3 text-gray-700">Neue Events erstellen</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Event-Name</label>
+                <input
+                  type="text"
+                  placeholder="z.B. Training, Turnier"
+                  value={newEvent.name}
+                  onChange={(e) => setNewEvent({...newEvent, name: e.target.value})}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Ort</label>
+                <input
+                  type="text"
+                  placeholder="z.B. Sportplatz Musterstadt"
+                  value={newEvent.location}
+                  onChange={(e) => setNewEvent({...newEvent, location: e.target.value})}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Von (Datum)</label>
+                  <input
+                    type="date"
+                    value={newEvent.dateFrom}
+                    onChange={(e) => setNewEvent({...newEvent, dateFrom: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Bis (Datum)</label>
+                  <input
+                    type="date"
+                    value={newEvent.dateTo}
+                    onChange={(e) => setNewEvent({...newEvent, dateTo: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Von (Zeit)</label>
+                  <input
+                    type="time"
+                    value={newEvent.timeFrom}
+                    onChange={(e) => setNewEvent({...newEvent, timeFrom: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Bis (Zeit)</label>
+                  <input
+                    type="time"
+                    value={newEvent.timeTo}
+                    onChange={(e) => setNewEvent({...newEvent, timeTo: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Wochentage</label>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { day: 1, label: 'Mo' },
+                    { day: 2, label: 'Di' },
+                    { day: 3, label: 'Mi' },
+                    { day: 4, label: 'Do' },
+                    { day: 5, label: 'Fr' },
+                    { day: 6, label: 'Sa' },
+                    { day: 0, label: 'So' }
+                  ].map(({ day, label }) => (
+                    <button
+                      key={day}
+                      type="button"
+                      onClick={() => toggleWeekday(day)}
+                      className={`px-4 py-2 rounded-lg font-semibold transition ${
+                        newEvent.weekdays.includes(day)
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Wähle die Wochentage, an denen Events erstellt werden sollen
+                </p>
+              </div>
             </div>
             <button
               onClick={handleAddEvent}
               className="mt-3 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold w-full"
             >
-              Event erstellen
+              Events erstellen
             </button>
           </div>
 
@@ -384,6 +433,11 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
               <div key={e.id} className="p-4 border rounded-lg hover:shadow-md transition">
                 <div className="flex justify-between items-center">
                   <div>
+                    {e.name && (
+                      <div className="text-sm font-semibold text-blue-600 mb-1">
+                        {e.name}
+                      </div>
+                    )}
                     <div className="font-bold text-lg text-gray-800">
                       {new Date(e.date).toLocaleDateString('de-DE', { 
                         weekday: 'short',
