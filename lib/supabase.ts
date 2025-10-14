@@ -28,6 +28,7 @@ export interface Event {
   time_from: string;
   time_to: string;
   location: string;
+  name?: string; // Optional für Abwärtskompatibilität
   created_at: string;
   updated_at: string;
 }
@@ -39,7 +40,6 @@ export interface Registration {
   status: 'yes' | 'no' | 'pending';
   comment: string | null;
   guests: number;
-  items?: Record<string, boolean>;  // ← NEU: Diese Zeile fehlt!
   created_at: string;
   updated_at: string;
 }
