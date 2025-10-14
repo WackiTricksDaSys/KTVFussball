@@ -29,7 +29,6 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
   const [loading, setLoading] = useState(true);
   const [newMember, setNewMember] = useState({ nickname: '', email: '' });
   const [newEvent, setNewEvent] = useState({ 
-    name: '',
     location: '', 
     timeFrom: '', 
     timeTo: '', 
