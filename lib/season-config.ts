@@ -8,8 +8,8 @@ export interface SeasonConfig {
 }
 
 export const SEASON_ITEMS: SeasonConfig = {
-  summer: ['Schlüssel', 'Ball', 'Überzieher', 'Handschuhe', 'Pumpe'],
-  winter: ['Hallenball', 'Überzieher', 'Pumpe']
+  summer: ['Schlüssel', 'Ball', 'Pumpe', 'Überzieher', 'Handschuhe'],
+  winter: ['Hallenball', 'Pumpe', 'Überzieher']
 };
 
 export function getItemsForSeason(season: Season): string[] {
