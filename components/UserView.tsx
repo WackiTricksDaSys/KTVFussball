@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { LogOut, MessageSquare, Check, X, AlertCircle, UserCheck, UserX } from 'lucide-react';
+import { LogOut, MessageSquare, Check, X, AlertCircle } from 'lucide-react';
 import { Member, Event, Registration } from '@/lib/supabase';
 import { 
   getAllMembers, 
@@ -140,13 +140,6 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
     }
   };
 
-  const getItemBringers = (eventId: number, itemKey: string) => {
-    return registrations
-      .filter(r => r.event_id === eventId && r.status === 'yes' && r.items?.[itemKey])
-      .map(r => members.find(m => m.id === r.member_id)?.nickname)
-      .filter(Boolean);
-  };
-
   const sortedMembers = [...members].sort((a, b) => a.nickname.localeCompare(b.nickname));
 
   if (loading) {
@@ -156,30 +149,21 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white shadow-md">
-        <div className="relative">
-          <img 
-            src={HEADER_IMAGE} 
-            alt="KTV Fußball" 
-            className="w-full h-32 object-cover"
-          />
-        </div>
-        <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-          <h1 className="text-xl font-semibold text-gray-800">Anmeldung</h1>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-600">
-              <span className="font-semibold">{currentUser.nickname}</span>
-            </span>
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-gray-900">Anmeldung</h1>
+          <div className="flex items-center gap-4">
+            <span className="text-lg font-semibold text-gray-700">{currentUser.nickname}</span>
             {currentUser.is_admin && (
               <button
                 onClick={() => onSwitchView('admin')}
-                className="text-sm px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition text-gray-700 font-medium"
               >
                 Admin-Bereich
               </button>
             )}
             <button onClick={onLogout} className="text-gray-600 hover:text-gray-800 transition">
-              <LogOut className="w-5 h-5" />
+              <LogOut className="w-6 h-6" />
             </button>
           </div>
         </div>
@@ -198,120 +182,137 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
           </div>
         )}
 
-        {/* Utensilien-Übersicht - Horizontal wie im Screenshot */}
         {events.length > 0 && (
-          <div className="mb-4">
-            {events.map(event => {
-              const eventDate = new Date(event.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
-              return (
-                <div key={event.id} className="mb-6">
-                  <div className="bg-white rounded-lg shadow overflow-hidden">
-                    {/* Event Header */}
-                    <div className="bg-gray-100 px-4 py-2 font-semibold text-gray-800 text-sm">
-                      {eventDate} {event.time_from}-{event.time_to} {event.location}
-                    </div>
-                    
-                    {/* Utensilien Tabelle */}
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b">
-                            <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 bg-gray-50">Spieler</th>
-                            {sortedMembers.map(m => (
-                              <th key={m.id} className="px-2 py-2 text-center text-xs font-medium text-gray-600 bg-gray-50">
-                                {m.nickname}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {currentSeasonItems.map(item => {
-                            const itemKey = getItemKey(item);
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+            {/* Utensilien-Tabelle - Horizontal scrollbar */}
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b-2 border-gray-200">
+                    <th className="px-4 py-3 text-left font-bold text-gray-900 bg-gray-50 sticky left-0 z-10">
+                      Spieler
+                    </th>
+                    {events.map(event => (
+                      <th key={event.id} className="px-6 py-3 text-center bg-gray-50 min-w-[140px]">
+                        <div className="font-bold text-gray-900 text-base">
+                          {new Date(event.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) + '.'}
+                        </div>
+                        <div className="text-sm text-gray-600 font-normal">
+                          {event.time_from}-{event.time_to}
+                        </div>
+                        <div className="text-sm text-gray-500 font-normal">
+                          {event.location}
+                        </div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {currentSeasonItems.map((item, idx) => {
+                    const itemKey = getItemKey(item);
+                    return (
+                      <tr key={itemKey} className={`border-b ${idx % 2 === 0 ? 'bg-yellow-50' : 'bg-white'}`}>
+                        <td className="px-4 py-3 font-semibold text-gray-900 sticky left-0 bg-inherit z-10">
+                          {item}
+                        </td>
+                        {events.map(event => {
+                          const bringers = sortedMembers
+                            .filter(m => {
+                              const reg = getRegistration(m.id, event.id);
+                              return reg?.status === 'yes' && reg?.items?.[itemKey];
+                            })
+                            .map(m => m.nickname);
+                          
+                          return (
+                            <td key={event.id} className="px-6 py-3 text-center">
+                              {bringers.length > 0 ? (
+                                <span className="font-bold text-green-600 text-base">
+                                  {bringers.join(', ')}
+                                </span>
+                              ) : (
+                                <span className="text-gray-300 text-xl">—</span>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Spieler Status Liste */}
+            <div className="border-t-4 border-gray-300">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <tbody>
+                    {sortedMembers.map(member => {
+                      const isCurrentUser = member.id === currentUser.id;
+                      return (
+                        <tr key={member.id} className="border-b last:border-b-0 hover:bg-gray-50">
+                          <td className="px-4 py-4 font-bold text-gray-900 text-lg sticky left-0 bg-white z-10">
+                            {member.nickname}
+                            {isCurrentUser && (
+                              <span className="ml-2 text-blue-600 text-base">(Du)</span>
+                            )}
+                          </td>
+                          {events.map(event => {
+                            const reg = getRegistration(member.id, event.id);
+                            const locked = isEventLocked(event);
+                            
                             return (
-                              <tr key={itemKey} className="border-b hover:bg-gray-50">
-                                <td className="px-4 py-2 font-medium text-gray-700">{item}</td>
-                                {sortedMembers.map(member => {
-                                  const reg = getRegistration(member.id, event.id);
-                                  const hasBringer = reg?.items?.[itemKey];
-                                  return (
-                                    <td key={member.id} className="px-2 py-2 text-center">
-                                      {hasBringer ? (
-                                        <span className="text-green-600 font-bold text-lg">{member.nickname}</span>
-                                      ) : (
-                                        <span className="text-gray-300">—</span>
+                              <td key={event.id} className="px-2 py-2 text-center min-w-[140px]">
+                                <button
+                                  onClick={() => handleCellClick(member, event)}
+                                  className="relative w-full"
+                                >
+                                  {reg?.status === 'yes' && (
+                                    <div className="bg-green-500 rounded-lg p-4 flex items-center justify-center gap-2 relative">
+                                      <Check className="w-8 h-8 text-white stroke-[3]" />
+                                      {reg.comment && (
+                                        <MessageSquare className="w-5 h-5 text-white absolute top-2 right-2" />
                                       )}
-                                    </td>
-                                  );
-                                })}
-                              </tr>
+                                      {reg.guests > 0 && (
+                                        <span className="absolute bottom-2 right-2 text-white font-bold text-sm">
+                                          +{reg.guests}
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                  
+                                  {reg?.status === 'no' && (
+                                    <div className="bg-red-500 rounded-lg p-4 flex items-center justify-center gap-2 relative">
+                                      <X className="w-8 h-8 text-white stroke-[3]" />
+                                      {reg.comment && (
+                                        <MessageSquare className="w-5 h-5 text-white absolute top-2 right-2" />
+                                      )}
+                                      {reg.guests > 0 && (
+                                        <span className="absolute bottom-2 right-2 text-white font-bold text-sm">
+                                          +{reg.guests}
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                  
+                                  {(!reg || reg.status === 'pending') && (
+                                    <div className="bg-gray-100 rounded-lg p-4 h-16"></div>
+                                  )}
+                                  
+                                  {locked && (
+                                    <span className="absolute top-1 left-1 text-xs">🔒</span>
+                                  )}
+                                </button>
+                              </td>
                             );
                           })}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {/* Spieler Status */}
-                    <div className="p-4 space-y-2">
-                      {sortedMembers.map(member => {
-                        const reg = getRegistration(member.id, event.id);
-                        const isCurrentUser = member.id === currentUser.id;
-                        const locked = isEventLocked(event);
-                        
-                        return (
-                          <div 
-                            key={member.id}
-                            onClick={() => handleCellClick(member, event)}
-                            className={`flex items-center gap-2 p-3 rounded-lg cursor-pointer transition ${
-                              isCurrentUser ? 'bg-blue-50 ring-2 ring-blue-200' : 'bg-gray-50 hover:bg-gray-100'
-                            }`}
-                          >
-                            <div className="flex-1 font-semibold text-gray-800">
-                              {member.nickname}
-                              {isCurrentUser && <span className="ml-2 text-blue-600 text-xs">(Du)</span>}
-                            </div>
-                            
-                            {/* Status Buttons */}
-                            <div className="flex items-center gap-2">
-                              {reg?.comment && (
-                                <div className="relative">
-                                  <MessageSquare className="w-5 h-5 text-blue-600 stroke-[2.5]" />
-                                </div>
-                              )}
-                              
-                              {(reg?.guests ?? 0) > 0 && (
-                                <div className="px-2 py-1 bg-blue-100 text-blue-700 rounded font-bold text-xs">
-                                  +{reg?.guests ?? 0}
-                                </div>
-                              )}
-                              
-                              {reg?.status === 'yes' && (
-                                <div className="w-16 h-16 bg-green-500 rounded-lg flex items-center justify-center">
-                                  <Check className="w-8 h-8 text-white" />
-                                </div>
-                              )}
-                              
-                              {reg?.status === 'no' && (
-                                <div className="w-16 h-16 bg-red-500 rounded-lg flex items-center justify-center">
-                                  <X className="w-8 h-8 text-white" />
-                                </div>
-                              )}
-                              
-                              {reg?.status === 'pending' && (
-                                <div className="w-16 h-16 bg-gray-200 rounded-lg"></div>
-                              )}
-                              
-                              {locked && (
-                                <span className="text-xs text-gray-500">🔒</span>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         )}
 
@@ -322,7 +323,7 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
         )}
       </div>
 
-      {/* Edit Popup */}
+      {/* Edit Popup - unverändert */}
       {editPopup && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
@@ -333,7 +334,6 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
             
             {editPopup.isOwn && currentUser.is_active && !editPopup.locked ? (
               <>
-                {/* Status Selection */}
                 <div className="mb-4">
                   <label className="block text-sm font-semibold mb-2 text-gray-700">Status</label>
                   <div className="grid grid-cols-2 gap-3">
@@ -345,7 +345,7 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
                           : 'bg-gray-100 hover:bg-gray-200'
                       }`}
                     >
-                      <UserCheck className="w-5 h-5" />
+                      <Check className="w-5 h-5" />
                       Zusage
                     </button>
                     <button
@@ -356,13 +356,12 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
                           : 'bg-gray-100 hover:bg-gray-200'
                       }`}
                     >
-                      <UserX className="w-5 h-5" />
+                      <X className="w-5 h-5" />
                       Absage
                     </button>
                   </div>
                 </div>
 
-                {/* Utensilien Checkboxes */}
                 <div className="mb-4">
                   <label className="block text-sm font-semibold mb-2 text-gray-700">Utensilien mitbringen</label>
                   <div className="space-y-2">
@@ -386,7 +385,6 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
                   </div>
                 </div>
 
-                {/* Guests Counter */}
                 <div className="mb-4">
                   <label className="block text-sm font-semibold mb-2 text-gray-700">Anzahl Gäste</label>
                   <div className="flex items-center gap-3">
@@ -415,7 +413,6 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
                   </div>
                 </div>
                 
-                {/* Comment */}
                 <div className="mb-4">
                   <label className="block text-sm font-semibold mb-2 text-gray-700">Kommentar</label>
                   <textarea
@@ -426,7 +423,6 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
                   />
                 </div>
                 
-                {/* Actions */}
                 <div className="flex gap-3">
                   <button
                     onClick={handleSaveRegistration}
@@ -444,7 +440,6 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
               </>
             ) : (
               <>
-                {/* Read-only view */}
                 <div className="mb-3 p-3 bg-gray-50 rounded-lg">
                   <div className="text-sm text-gray-600">Status:</div>
                   <div className="text-lg font-bold">
