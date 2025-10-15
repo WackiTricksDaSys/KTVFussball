@@ -141,7 +141,6 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
   };
 
   const countTotal = (eventId: number) => {
-    // Alle Anmeldungen (yes + no) zählen für Gäste
     const allRegs = registrations.filter(r => r.event_id === eventId && (r.status === 'yes' || r.status === 'no'));
     const memberCount = registrations.filter(r => r.event_id === eventId && r.status === 'yes').length;
     const guestCount = allRegs.reduce((sum, r) => sum + (r.guests || 0), 0);
@@ -185,8 +184,6 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
           </div>
         </div>
       </div>
-        </div>
-      </div>
 
       <div className="max-w-7xl mx-auto p-4">
         {!currentUser.is_active && (
@@ -203,20 +200,16 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
 
         {events.length > 0 && (
           <div className="bg-white rounded-lg shadow-sm overflow-hidden inline-block">
-            {/* Eine gemeinsame Scrollbar für beide Tabellen */}
             <div className="overflow-x-auto">
               <div>
-                {/* Utensilien-Tabelle */}
                 <table className="border-collapse">
                   <thead>
                     <tr className="border-b-2 border-gray-200">
-                      <th className="px-4 py-3 text-left font-bold text-gray-900 bg-gray-50 sticky left-0 z-10 w-32">
-                        {/* Leer - darunter kommen Utensilien und Spieler */}
-                      </th>
+                      <th className="px-4 py-3 text-left font-bold text-gray-900 bg-gray-50 sticky left-0 z-10 w-32"></th>
                       {events.map(event => (
                         <th key={event.id} className="px-6 py-3 text-center bg-gray-50 w-40">
                           <div className="font-bold text-gray-900 text-base">
-                            {new Date(event.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) }
+                            {new Date(event.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
                           </div>
                           <div className="text-sm text-gray-600 font-normal">
                             {event.time_from.substring(0, 5)}-{event.time_to.substring(0, 5)}
@@ -233,7 +226,7 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
                       const itemKey = getItemKey(item);
                       return (
                         <tr key={itemKey} className="border-b bg-yellow-50">
-                          <td className="px-4 py-3 font-semibold text-gray-900 sticky left-0 z-10 bg-yellow-50">
+                          <td className="px-4 py-3 font-semibold text-gray-900 sticky left-0 z-10 bg-yellow-50 w-32">
                             {item}
                           </td>
                           {events.map(event => {
@@ -245,7 +238,7 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
                               .map(m => m.nickname);
                             
                             return (
-                              <td key={event.id} className="px-6 py-3 text-center">
+                              <td key={event.id} className="px-6 py-3 text-center w-40">
                                 {bringers.length > 0 ? (
                                   <span className="font-bold text-green-600 text-base">
                                     {bringers.join(', ')}
@@ -262,7 +255,6 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
                   </tbody>
                 </table>
 
-                {/* Spieler Status Liste */}
                 <div className="border-t-4 border-gray-300">
                   <table className="border-collapse">
                     <tbody>
@@ -332,7 +324,6 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
                   </table>
                 </div>
 
-                {/* Total-Zeile */}
                 <div className="border-t-2 border-gray-400 bg-gray-50">
                   <table className="border-collapse">
                     <tbody>
