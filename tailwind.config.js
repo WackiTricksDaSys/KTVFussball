@@ -8,7 +8,7 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        'ktv-red': '#DC2626',
+        'ktv-red': '#CC0000',
         'ktv-black': '#000000',
       },
     },
