@@ -154,15 +154,15 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
   }
 
   return (
-    <div className="min-h-screen bg-gray-50" min-w-full>
-      {/* Header mit Bild - 49px hoch - FIXED */}
-<div className="bg-ktv-red h-[49px] min-w-full">
-  <img 
-    src={HEADER_IMAGE} 
-    alt="KTV Fußball" 
-    className="h-[49px] object-contain object-left"
-  />
-</div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header mit Bild - 49px hoch */}
+      <div className="bg-ktv-red h-[49px] w-full">
+        <img 
+          src={HEADER_IMAGE} 
+          alt="KTV Fußball" 
+          className="h-[49px] object-contain object-left"
+        />
+      </div>
       
       {/* Navigation Bar */}
       <div className="bg-white shadow-sm border-b">
@@ -199,156 +199,151 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
         )}
 
         {events.length > 0 && (
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden inline-block">
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
-              <div>
-                <table className="border-collapse">
-                  <thead>
-                    <tr className="border-b-2 border-gray-200">
-                      <th className="px-4 py-3 text-left font-bold text-gray-900 bg-gray-50 sticky left-0 z-10 w-32"></th>
-                      {events.map(event => (
-                        <th key={event.id} className="px-6 py-3 text-center bg-gray-50 w-40">
-                          <div className="font-bold text-gray-900 text-base">
-                            {new Date(event.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
-                          </div>
-                          <div className="text-sm text-gray-600 font-normal">
-                            {event.time_from.substring(0, 5)}-{event.time_to.substring(0, 5)}
-                          </div>
-                          <div className="text-sm text-gray-500 font-normal">
-                            {event.location}
-                          </div>
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {currentSeasonItems.map((item) => {
-                      const itemKey = getItemKey(item);
-                      return (
-                        <tr key={itemKey} className="border-b bg-yellow-50">
-                          <td className="px-4 py-3 font-semibold text-gray-900 sticky left-0 z-10 bg-yellow-50 w-32">
-                            {item}
-                          </td>
-                          {events.map(event => {
-                            const bringers = sortedMembers
-                              .filter(m => {
-                                const reg = getRegistration(m.id, event.id);
-                                return reg?.status === 'yes' && reg?.items?.[itemKey];
-                              })
-                              .map(m => m.nickname);
-                            
-                            return (
-                              <td key={event.id} className="px-6 py-3 text-center w-40">
-                                {bringers.length > 0 ? (
-                                  <span className="font-bold text-green-600 text-base">
-                                    {bringers.join(', ')}
-                                  </span>
-                                ) : (
-                                  <span className="text-gray-300 text-xl">—</span>
-                                )}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-
-                <div className="border-t-4 border-gray-300">
-                  <table className="border-collapse">
-                    <tbody>
-                      {sortedMembers.map(member => {
-                        const isCurrentUser = member.id === currentUser.id;
-                        return (
-                          <tr key={member.id} className="border-b last:border-b-0 hover:bg-gray-50">
-                            <td className="px-4 py-4 font-bold text-gray-900 text-lg sticky left-0 bg-white z-10 w-32">
-                              {member.nickname}
-                              {isCurrentUser && (
-                                <span className="ml-2 text-blue-600 text-base">(Du)</span>
-                              )}
-                            </td>
-                            {events.map(event => {
-                              const reg = getRegistration(member.id, event.id);
-                              const locked = isEventLocked(event);
-                              
-                              return (
-                                <td key={event.id} className="px-2 py-2 text-center w-40">
-                                  <button
-                                    onClick={() => handleCellClick(member, event)}
-                                    className="relative w-full"
-                                  >
-                                    {reg?.status === 'yes' && (
-                                      <div className="bg-green-500 rounded-lg p-4 flex items-center justify-center gap-2 relative">
-                                        <Check className="w-8 h-8 text-white stroke-[3]" />
-                                        {reg.comment && (
-                                          <MessageSquare className="w-5 h-5 text-white absolute top-2 right-2" />
-                                        )}
-                                        {reg.guests > 0 && (
-                                          <span className="absolute bottom-2 right-2 text-white font-bold text-sm">
-                                            +{reg.guests}
-                                          </span>
-                                        )}
-                                      </div>
-                                    )}
-                                    
-                                    {reg?.status === 'no' && (
-                                      <div className="bg-red-500 rounded-lg p-4 flex items-center justify-center gap-2 relative">
-                                        <X className="w-8 h-8 text-white stroke-[3]" />
-                                        {reg.comment && (
-                                          <MessageSquare className="w-5 h-5 text-white absolute top-2 right-2" />
-                                        )}
-                                        {reg.guests > 0 && (
-                                          <span className="absolute bottom-2 right-2 text-white font-bold text-sm">
-                                            +{reg.guests}
-                                          </span>
-                                        )}
-                                      </div>
-                                    )}
-                                    
-                                    {(!reg || reg.status === 'pending') && (
-                                      <div className="bg-gray-100 rounded-lg p-4 h-16"></div>
-                                    )}
-                                    
-                                    {locked && (
-                                      <span className="absolute top-1 left-1 text-xs">🔒</span>
-                                    )}
-                                  </button>
-                                </td>
-                              );
-                            })}
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="border-t-2 border-gray-400 bg-gray-50">
-                  <table className="border-collapse">
-                    <tbody>
-                      <tr>
-                        <td className="px-4 py-3 font-bold text-gray-900 text-lg sticky left-0 bg-gray-50 z-10 w-32">
-                          Total
+              <table className="border-collapse min-w-full">
+                <thead>
+                  <tr className="border-b-2 border-gray-200">
+                    <th className="px-4 py-3 text-left font-bold text-gray-900 bg-gray-50 sticky left-0 z-20 min-w-[140px]">
+                      {/* Empty header cell */}
+                    </th>
+                    {events.map(event => (
+                      <th key={event.id} className="px-6 py-3 text-center bg-gray-50 min-w-[160px]">
+                        <div className="font-bold text-gray-900 text-base">
+                          {new Date(event.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
+                        </div>
+                        <div className="text-sm text-gray-600 font-normal">
+                          {event.time_from.substring(0, 5)}-{event.time_to.substring(0, 5)}
+                        </div>
+                        <div className="text-sm text-gray-500 font-normal">
+                          {event.location}
+                        </div>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {currentSeasonItems.map((item) => {
+                    const itemKey = getItemKey(item);
+                    return (
+                      <tr key={itemKey} className="border-b bg-yellow-50">
+                        <td className="px-4 py-3 font-semibold text-gray-900 sticky left-0 z-10 bg-yellow-50 min-w-[140px] border-r border-yellow-100">
+                          {item}
                         </td>
                         {events.map(event => {
-                          const counts = countTotal(event.id);
+                          const bringers = sortedMembers
+                            .filter(m => {
+                              const reg = getRegistration(m.id, event.id);
+                              return reg?.status === 'yes' && reg?.items?.[itemKey];
+                            })
+                            .map(m => m.nickname);
+                          
                           return (
-                            <td key={event.id} className="px-6 py-3 text-center w-40">
-                              <div className="font-bold text-blue-600 text-xl">
-                                {counts.total}
-                              </div>
-                              <div className="text-xs text-gray-600">
-                                ({counts.members} + {counts.guests})
-                              </div>
+                            <td key={event.id} className="px-6 py-3 text-center min-w-[160px]">
+                              {bringers.length > 0 ? (
+                                <span className="font-bold text-green-600 text-base">
+                                  {bringers.join(', ')}
+                                </span>
+                              ) : (
+                                <span className="text-gray-300 text-xl">—</span>
+                              )}
                             </td>
                           );
                         })}
                       </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+                    );
+                  })}
+
+                  {/* Trennlinie */}
+                  <tr className="h-1 bg-gray-300">
+                    <td colSpan={events.length + 1} className="p-0"></td>
+                  </tr>
+
+                  {/* Spieler-Zeilen */}
+                  {sortedMembers.map(member => {
+                    const isCurrentUser = member.id === currentUser.id;
+                    return (
+                      <tr key={member.id} className="border-b last:border-b-0 hover:bg-gray-50">
+                        <td className="px-4 py-4 font-bold text-gray-900 text-lg sticky left-0 z-10 bg-white min-w-[140px] border-r border-gray-200">
+                          {member.nickname}
+                          {isCurrentUser && (
+                            <span className="ml-2 text-blue-600 text-base">(Du)</span>
+                          )}
+                        </td>
+                        {events.map(event => {
+                          const reg = getRegistration(member.id, event.id);
+                          const locked = isEventLocked(event);
+                          
+                          return (
+                            <td key={event.id} className="px-2 py-2 text-center min-w-[160px]">
+                              <button
+                                onClick={() => handleCellClick(member, event)}
+                                className="relative w-full"
+                              >
+                                {reg?.status === 'yes' && (
+                                  <div className="bg-green-500 rounded-lg p-4 flex items-center justify-center gap-2 relative">
+                                    <Check className="w-8 h-8 text-white stroke-[3]" />
+                                    {reg.comment && (
+                                      <MessageSquare className="w-5 h-5 text-white absolute top-2 right-2" />
+                                    )}
+                                    {reg.guests > 0 && (
+                                      <span className="absolute bottom-2 right-2 text-white font-bold text-sm">
+                                        +{reg.guests}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                                
+                                {reg?.status === 'no' && (
+                                  <div className="bg-red-500 rounded-lg p-4 flex items-center justify-center gap-2 relative">
+                                    <X className="w-8 h-8 text-white stroke-[3]" />
+                                    {reg.comment && (
+                                      <MessageSquare className="w-5 h-5 text-white absolute top-2 right-2" />
+                                    )}
+                                    {reg.guests > 0 && (
+                                      <span className="absolute bottom-2 right-2 text-white font-bold text-sm">
+                                        +{reg.guests}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                                
+                                {(!reg || reg.status === 'pending') && (
+                                  <div className="bg-gray-100 rounded-lg p-4 h-16"></div>
+                                )}
+                                
+                                {locked && (
+                                  <span className="absolute top-1 left-1 text-xs">🔒</span>
+                                )}
+                              </button>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+
+                  {/* Total-Zeile */}
+                  <tr className="border-t-2 border-gray-400 bg-gray-50">
+                    <td className="px-4 py-3 font-bold text-gray-900 text-lg sticky left-0 z-10 bg-gray-50 min-w-[140px] border-r border-gray-300">
+                      Total
+                    </td>
+                    {events.map(event => {
+                      const counts = countTotal(event.id);
+                      return (
+                        <td key={event.id} className="px-6 py-3 text-center min-w-[160px]">
+                          <div className="font-bold text-blue-600 text-xl">
+                            {counts.total}
+                          </div>
+                          <div className="text-xs text-gray-600">
+                            ({counts.members} + {counts.guests})
+                          </div>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         )}
@@ -532,4 +527,4 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
       )}
     </div>
   );
-}
+ }
