@@ -216,7 +216,7 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
                       {events.map(event => (
                         <th key={event.id} className="px-6 py-3 text-center bg-gray-50 w-40">
                           <div className="font-bold text-gray-900 text-base">
-                            {new Date(event.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) + '.'}
+                            {new Date(event.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) }
                           </div>
                           <div className="text-sm text-gray-600 font-normal">
                             {event.time_from.substring(0, 5)}-{event.time_to.substring(0, 5)}
