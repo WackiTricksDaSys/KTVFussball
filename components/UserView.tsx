@@ -498,4 +498,4 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
       )}
     </div>
   );
-}
+                                       }
