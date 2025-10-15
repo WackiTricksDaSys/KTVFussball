@@ -93,7 +93,7 @@ export default function LoginView({ onLogin }: LoginViewProps) {
         <div className="bg-ktv-red h-[49px] w-full">
           <img 
             src={HEADER_IMAGE} 
-            alt="KTV Fußball" 
+            alt="KTV Fussball" 
             className="h-[49px] object-contain object-left"
           />
         </div>
@@ -150,7 +150,7 @@ export default function LoginView({ onLogin }: LoginViewProps) {
       <div className="bg-ktv-red h-[49px] w-full">
         <img 
           src={HEADER_IMAGE} 
-          alt="KTV Fußball" 
+          alt="KTV Fussball" 
           className="h-[49px] object-contain object-left"
         />
       </div>
@@ -158,7 +158,7 @@ export default function LoginView({ onLogin }: LoginViewProps) {
       <div className="max-w-md mx-auto mt-20 px-4">
         <div className="bg-white rounded-lg shadow-lg p-8">
           <h1 className="text-2xl font-bold text-gray-800 text-center mb-6">
-            KTV Fußball Login
+            KTV Fussball Login
           </h1>
           
           {error && (
