@@ -155,14 +155,17 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header mit Bild - 49px hoch */}
-      <div className="bg-ktv-red h-[49px] w-full">
-        <img 
-          src={HEADER_IMAGE} 
-          alt="KTV Fußball" 
-          className="h-[49px] object-contain object-left"
-        />
-      </div>
+      {/* Header mit Bild - 49px hoch - FIXED VERSION */}
+<div className="bg-ktv-red h-[49px] w-full overflow-hidden">
+  <div className="min-w-full">
+    <img 
+      src={HEADER_IMAGE} 
+      alt="KTV Fussball" 
+      className="h-[49px] object-contain object-left"
+      style={{ minWidth: '100vw' }}
+    />
+  </div>
+</div>
       
       {/* Navigation Bar */}
       <div className="bg-white shadow-sm border-b">
