@@ -78,7 +78,7 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
       eventDate: new Date(event.date).toLocaleDateString('de-DE', { 
         day: '2-digit', 
         month: '2-digit'
-      }) + ' ' + event.time_from + '-' + event.time_to + ' ' + event.location,
+      }) + ' ' + event.time_from.substring(0, 5) + '-' + event.time_to.substring(0, 5) + ' ' + event.location,
       status: reg?.status ?? 'pending',
       comment: reg?.comment ?? '',
       guests: reg?.guests ?? 0,
@@ -140,6 +140,14 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
     }
   };
 
+  const countTotal = (eventId: number) => {
+    // Alle Anmeldungen (yes + no) zählen für Gäste
+    const allRegs = registrations.filter(r => r.event_id === eventId && (r.status === 'yes' || r.status === 'no'));
+    const memberCount = registrations.filter(r => r.event_id === eventId && r.status === 'yes').length;
+    const guestCount = allRegs.reduce((sum, r) => sum + (r.guests || 0), 0);
+    return { members: memberCount, guests: guestCount, total: memberCount + guestCount };
+  };
+
   const sortedMembers = [...members].sort((a, b) => a.nickname.localeCompare(b.nickname));
 
   if (loading) {
@@ -184,125 +192,56 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
 
         {events.length > 0 && (
           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-            {/* Utensilien-Tabelle - Horizontal scrollbar */}
+            {/* Eine gemeinsame Scrollbar für beide Tabellen */}
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b-2 border-gray-200">
-                    <th className="px-4 py-3 text-left font-bold text-gray-900 bg-gray-50 sticky left-0 z-10">
-                      Spieler
-                    </th>
-                    {events.map(event => (
-                      <th key={event.id} className="px-6 py-3 text-center bg-gray-50 min-w-[140px]">
-                        <div className="font-bold text-gray-900 text-base">
-                          {new Date(event.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) + '.'}
-                        </div>
-                        <div className="text-sm text-gray-600 font-normal">
-                          {event.time_from}-{event.time_to}
-                        </div>
-                        <div className="text-sm text-gray-500 font-normal">
-                          {event.location}
-                        </div>
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentSeasonItems.map((item, idx) => {
-                    const itemKey = getItemKey(item);
-                    return (
-                      <tr key={itemKey} className={`border-b ${idx % 2 === 0 ? 'bg-yellow-50' : 'bg-white'}`}>
-                        <td className="px-4 py-3 font-semibold text-gray-900 sticky left-0 bg-inherit z-10">
-                          {item}
-                        </td>
-                        {events.map(event => {
-                          const bringers = sortedMembers
-                            .filter(m => {
-                              const reg = getRegistration(m.id, event.id);
-                              return reg?.status === 'yes' && reg?.items?.[itemKey];
-                            })
-                            .map(m => m.nickname);
-                          
-                          return (
-                            <td key={event.id} className="px-6 py-3 text-center">
-                              {bringers.length > 0 ? (
-                                <span className="font-bold text-green-600 text-base">
-                                  {bringers.join(', ')}
-                                </span>
-                              ) : (
-                                <span className="text-gray-300 text-xl">—</span>
-                              )}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Spieler Status Liste */}
-            <div className="border-t-4 border-gray-300">
-              <div className="overflow-x-auto">
+              <div className="min-w-full">
+                {/* Utensilien-Tabelle */}
                 <table className="w-full">
+                  <thead>
+                    <tr className="border-b-2 border-gray-200">
+                      <th className="px-4 py-3 text-left font-bold text-gray-900 bg-gray-50 sticky left-0 z-10">
+                        {/* Leer - darunter kommen Utensilien und Spieler */}
+                      </th>
+                      {events.map(event => (
+                        <th key={event.id} className="px-6 py-3 text-center bg-gray-50 min-w-[140px]">
+                          <div className="font-bold text-gray-900 text-base">
+                            {new Date(event.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) + '.'}
+                          </div>
+                          <div className="text-sm text-gray-600 font-normal">
+                            {event.time_from.substring(0, 5)}-{event.time_to.substring(0, 5)}
+                          </div>
+                          <div className="text-sm text-gray-500 font-normal">
+                            {event.location}
+                          </div>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
                   <tbody>
-                    {sortedMembers.map(member => {
-                      const isCurrentUser = member.id === currentUser.id;
+                    {currentSeasonItems.map((item) => {
+                      const itemKey = getItemKey(item);
                       return (
-                        <tr key={member.id} className="border-b last:border-b-0 hover:bg-gray-50">
-                          <td className="px-4 py-4 font-bold text-gray-900 text-lg sticky left-0 bg-white z-10">
-                            {member.nickname}
-                            {isCurrentUser && (
-                              <span className="ml-2 text-blue-600 text-base">(Du)</span>
-                            )}
+                        <tr key={itemKey} className="border-b bg-yellow-50">
+                          <td className="px-4 py-3 font-semibold text-gray-900 sticky left-0 z-10 bg-yellow-50">
+                            {item}
                           </td>
                           {events.map(event => {
-                            const reg = getRegistration(member.id, event.id);
-                            const locked = isEventLocked(event);
+                            const bringers = sortedMembers
+                              .filter(m => {
+                                const reg = getRegistration(m.id, event.id);
+                                return reg?.status === 'yes' && reg?.items?.[itemKey];
+                              })
+                              .map(m => m.nickname);
                             
                             return (
-                              <td key={event.id} className="px-2 py-2 text-center min-w-[140px]">
-                                <button
-                                  onClick={() => handleCellClick(member, event)}
-                                  className="relative w-full"
-                                >
-                                  {reg?.status === 'yes' && (
-                                    <div className="bg-green-500 rounded-lg p-4 flex items-center justify-center gap-2 relative">
-                                      <Check className="w-8 h-8 text-white stroke-[3]" />
-                                      {reg.comment && (
-                                        <MessageSquare className="w-5 h-5 text-white absolute top-2 right-2" />
-                                      )}
-                                      {reg.guests > 0 && (
-                                        <span className="absolute bottom-2 right-2 text-white font-bold text-sm">
-                                          +{reg.guests}
-                                        </span>
-                                      )}
-                                    </div>
-                                  )}
-                                  
-                                  {reg?.status === 'no' && (
-                                    <div className="bg-red-500 rounded-lg p-4 flex items-center justify-center gap-2 relative">
-                                      <X className="w-8 h-8 text-white stroke-[3]" />
-                                      {reg.comment && (
-                                        <MessageSquare className="w-5 h-5 text-white absolute top-2 right-2" />
-                                      )}
-                                      {reg.guests > 0 && (
-                                        <span className="absolute bottom-2 right-2 text-white font-bold text-sm">
-                                          +{reg.guests}
-                                        </span>
-                                      )}
-                                    </div>
-                                  )}
-                                  
-                                  {(!reg || reg.status === 'pending') && (
-                                    <div className="bg-gray-100 rounded-lg p-4 h-16"></div>
-                                  )}
-                                  
-                                  {locked && (
-                                    <span className="absolute top-1 left-1 text-xs">🔒</span>
-                                  )}
-                                </button>
+                              <td key={event.id} className="px-6 py-3 text-center">
+                                {bringers.length > 0 ? (
+                                  <span className="font-bold text-green-600 text-base">
+                                    {bringers.join(', ')}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-300 text-xl">—</span>
+                                )}
                               </td>
                             );
                           })}
@@ -311,6 +250,102 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
                     })}
                   </tbody>
                 </table>
+
+                {/* Spieler Status Liste */}
+                <div className="border-t-4 border-gray-300">
+                  <table className="w-full">
+                    <tbody>
+                      {sortedMembers.map(member => {
+                        const isCurrentUser = member.id === currentUser.id;
+                        return (
+                          <tr key={member.id} className="border-b last:border-b-0 hover:bg-gray-50">
+                            <td className="px-4 py-4 font-bold text-gray-900 text-lg sticky left-0 bg-white z-10">
+                              {member.nickname}
+                              {isCurrentUser && (
+                                <span className="ml-2 text-blue-600 text-base">(Du)</span>
+                              )}
+                            </td>
+                            {events.map(event => {
+                              const reg = getRegistration(member.id, event.id);
+                              const locked = isEventLocked(event);
+                              
+                              return (
+                                <td key={event.id} className="px-2 py-2 text-center min-w-[140px]">
+                                  <button
+                                    onClick={() => handleCellClick(member, event)}
+                                    className="relative w-full"
+                                  >
+                                    {reg?.status === 'yes' && (
+                                      <div className="bg-green-500 rounded-lg p-4 flex items-center justify-center gap-2 relative">
+                                        <Check className="w-8 h-8 text-white stroke-[3]" />
+                                        {reg.comment && (
+                                          <MessageSquare className="w-5 h-5 text-white absolute top-2 right-2" />
+                                        )}
+                                        {reg.guests > 0 && (
+                                          <span className="absolute bottom-2 right-2 text-white font-bold text-sm">
+                                            +{reg.guests}
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
+                                    
+                                    {reg?.status === 'no' && (
+                                      <div className="bg-red-500 rounded-lg p-4 flex items-center justify-center gap-2 relative">
+                                        <X className="w-8 h-8 text-white stroke-[3]" />
+                                        {reg.comment && (
+                                          <MessageSquare className="w-5 h-5 text-white absolute top-2 right-2" />
+                                        )}
+                                        {reg.guests > 0 && (
+                                          <span className="absolute bottom-2 right-2 text-white font-bold text-sm">
+                                            +{reg.guests}
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
+                                    
+                                    {(!reg || reg.status === 'pending') && (
+                                      <div className="bg-gray-100 rounded-lg p-4 h-16"></div>
+                                    )}
+                                    
+                                    {locked && (
+                                      <span className="absolute top-1 left-1 text-xs">🔒</span>
+                                    )}
+                                  </button>
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Total-Zeile */}
+                <div className="border-t-2 border-gray-400 bg-gray-50">
+                  <table className="w-full">
+                    <tbody>
+                      <tr>
+                        <td className="px-4 py-3 font-bold text-gray-900 text-lg sticky left-0 bg-gray-50 z-10">
+                          Total
+                        </td>
+                        {events.map(event => {
+                          const counts = countTotal(event.id);
+                          return (
+                            <td key={event.id} className="px-6 py-3 text-center">
+                              <div className="font-bold text-blue-600 text-xl">
+                                {counts.total}
+                              </div>
+                              <div className="text-xs text-gray-600">
+                                ({counts.members} + {counts.guests})
+                              </div>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>
@@ -323,7 +358,7 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
         )}
       </div>
 
-      {/* Edit Popup - unverändert */}
+      {/* Edit Popup */}
       {editPopup && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
@@ -498,4 +533,4 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
       )}
     </div>
   );
-                                       }
+                              }
