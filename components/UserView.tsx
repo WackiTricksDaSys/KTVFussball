@@ -156,7 +156,19 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      {/* Header mit Bild */}
+      <div className="bg-red-600">
+        <div className="max-w-7xl mx-auto">
+          <img 
+            src={HEADER_IMAGE} 
+            alt="KTV Fußball" 
+            className="h-32 object-contain"
+            style={{ imageRendering: 'crisp-edges' }}
+          />
+        </div>
+      </div>
+      
+      {/* Navigation Bar */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-900">Anmeldung</h1>
@@ -191,19 +203,19 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
         )}
 
         {events.length > 0 && (
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden inline-block">
             {/* Eine gemeinsame Scrollbar für beide Tabellen */}
             <div className="overflow-x-auto">
-              <div className="min-w-full">
+              <div>
                 {/* Utensilien-Tabelle */}
-                <table className="w-full">
+                <table className="border-collapse">
                   <thead>
                     <tr className="border-b-2 border-gray-200">
-                      <th className="px-4 py-3 text-left font-bold text-gray-900 bg-gray-50 sticky left-0 z-10">
+                      <th className="px-4 py-3 text-left font-bold text-gray-900 bg-gray-50 sticky left-0 z-10 w-32">
                         {/* Leer - darunter kommen Utensilien und Spieler */}
                       </th>
                       {events.map(event => (
-                        <th key={event.id} className="px-6 py-3 text-center bg-gray-50 min-w-[140px]">
+                        <th key={event.id} className="px-6 py-3 text-center bg-gray-50 w-40">
                           <div className="font-bold text-gray-900 text-base">
                             {new Date(event.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) + '.'}
                           </div>
@@ -253,13 +265,13 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
 
                 {/* Spieler Status Liste */}
                 <div className="border-t-4 border-gray-300">
-                  <table className="w-full">
+                  <table className="border-collapse">
                     <tbody>
                       {sortedMembers.map(member => {
                         const isCurrentUser = member.id === currentUser.id;
                         return (
                           <tr key={member.id} className="border-b last:border-b-0 hover:bg-gray-50">
-                            <td className="px-4 py-4 font-bold text-gray-900 text-lg sticky left-0 bg-white z-10">
+                            <td className="px-4 py-4 font-bold text-gray-900 text-lg sticky left-0 bg-white z-10 w-32">
                               {member.nickname}
                               {isCurrentUser && (
                                 <span className="ml-2 text-blue-600 text-base">(Du)</span>
@@ -270,7 +282,7 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
                               const locked = isEventLocked(event);
                               
                               return (
-                                <td key={event.id} className="px-2 py-2 text-center min-w-[140px]">
+                                <td key={event.id} className="px-2 py-2 text-center w-40">
                                   <button
                                     onClick={() => handleCellClick(member, event)}
                                     className="relative w-full"
@@ -323,16 +335,16 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
 
                 {/* Total-Zeile */}
                 <div className="border-t-2 border-gray-400 bg-gray-50">
-                  <table className="w-full">
+                  <table className="border-collapse">
                     <tbody>
                       <tr>
-                        <td className="px-4 py-3 font-bold text-gray-900 text-lg sticky left-0 bg-gray-50 z-10">
+                        <td className="px-4 py-3 font-bold text-gray-900 text-lg sticky left-0 bg-gray-50 z-10 w-32">
                           Total
                         </td>
                         {events.map(event => {
                           const counts = countTotal(event.id);
                           return (
-                            <td key={event.id} className="px-6 py-3 text-center">
+                            <td key={event.id} className="px-6 py-3 text-center w-40">
                               <div className="font-bold text-blue-600 text-xl">
                                 {counts.total}
                               </div>
@@ -370,7 +382,6 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
             {editPopup.isOwn && currentUser.is_active && !editPopup.locked ? (
               <>
                 <div className="mb-4">
-                  <label className="block text-sm font-semibold mb-2 text-gray-700">Status</label>
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       onClick={() => setEditPopup({...editPopup, status: 'yes'})}
@@ -398,7 +409,6 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
                 </div>
 
                 <div className="mb-4">
-                  <label className="block text-sm font-semibold mb-2 text-gray-700">Utensilien mitbringen</label>
                   <div className="space-y-2">
                     {currentSeasonItems.map(item => {
                       const itemKey = getItemKey(item);
@@ -421,7 +431,6 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
                 </div>
 
                 <div className="mb-4">
-                  <label className="block text-sm font-semibold mb-2 text-gray-700">Anzahl Gäste</label>
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => setEditPopup({
@@ -533,4 +542,4 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
       )}
     </div>
   );
-                              }
+}
