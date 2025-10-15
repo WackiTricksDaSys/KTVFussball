@@ -42,8 +42,6 @@ export default function LoginView({ onLogin }: LoginViewProps) {
         return;
       }
 
-      // User kann sich auch einloggen wenn deaktiviert (aber dann read-only)
-      // Alle landen auf der Anmeldeliste (User-View)
       if (user.must_change_password) {
         setMustChangePassword(true);
         setCurrentUser(user);
@@ -91,14 +89,16 @@ export default function LoginView({ onLogin }: LoginViewProps) {
   if (mustChangePassword) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="relative">
+        {/* Header mit Bild - 49px hoch */}
+        <div className="bg-ktv-red h-[49px] w-full">
           <img 
             src={HEADER_IMAGE} 
             alt="KTV Fußball" 
-            className="w-full h-48 object-cover"
+            className="h-[49px] object-contain object-left"
           />
         </div>
-        <div className="max-w-md mx-auto -mt-20 px-4">
+
+        <div className="max-w-md mx-auto mt-20 px-4">
           <div className="bg-white rounded-lg shadow-lg p-8">
             <h1 className="text-2xl font-bold text-gray-800 text-center mb-2">
               Passwort ändern
@@ -146,14 +146,16 @@ export default function LoginView({ onLogin }: LoginViewProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="relative">
+      {/* Header mit Bild - 49px hoch */}
+      <div className="bg-ktv-red h-[49px] w-full">
         <img 
           src={HEADER_IMAGE} 
           alt="KTV Fußball" 
-          className="w-full h-48 object-cover"
+          className="h-[49px] object-contain object-left"
         />
       </div>
-      <div className="max-w-md mx-auto -mt-20 px-4">
+
+      <div className="max-w-md mx-auto mt-20 px-4">
         <div className="bg-white rounded-lg shadow-lg p-8">
           <h1 className="text-2xl font-bold text-gray-800 text-center mb-6">
             KTV Fußball Login
