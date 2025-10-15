@@ -4,13 +4,13 @@ describe('Season Configuration', () => {
   describe('getItemsForSeason', () => {
     it('should return correct items for summer', () => {
       const items = getItemsForSeason('summer');
-      expect(items).toEqual(['Schlüssel', 'Ball', 'Überzieher', 'Handschuhe', 'Pumpe']);
+      expect(items).toEqual(['Schlüssel', 'Ball', 'Pumpe', 'Überzieher', 'Handschuhe']);
       expect(items).toHaveLength(5);
     });
 
     it('should return correct items for winter', () => {
       const items = getItemsForSeason('winter');
-      expect(items).toEqual(['Hallenball', 'Überzieher', 'Pumpe']);
+      expect(items).toEqual(['Hallenball', 'Pumpe', 'Überzieher']);
       expect(items).toHaveLength(3);
     });
 
@@ -18,16 +18,16 @@ describe('Season Configuration', () => {
       const items = getItemsForSeason('summer');
       expect(items[0]).toBe('Schlüssel');
       expect(items[1]).toBe('Ball');
-      expect(items[2]).toBe('Überzieher');
-      expect(items[3]).toBe('Handschuhe');
-      expect(items[4]).toBe('Pumpe');
+      expect(items[2]).toBe('Pumpe');
+      expect(items[3]).toBe('Überzieher');
+      expect(items[4]).toBe('Handschuhe');
     });
 
     it('should maintain correct order for winter', () => {
       const items = getItemsForSeason('winter');
       expect(items[0]).toBe('Hallenball');
-      expect(items[1]).toBe('Überzieher');
-      expect(items[2]).toBe('Pumpe');
+      expect(items[1]).toBe('Pumpe');
+      expect(items[2]).toBe('Überzieher');
     });
   });
 
