@@ -90,7 +90,7 @@ export default function LoginView({ onLogin }: LoginViewProps) {
     return (
       <div className="min-h-screen bg-gray-50">
         {/* Header mit Bild - 49px hoch */}
-        <div className="bg-ktv-red h-[49px] w-full">
+        <div className="sticky bg-ktv-red h-[49px] w-full">
           <img 
             src={HEADER_IMAGE} 
             alt="KTV Fussball" 
