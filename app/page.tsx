@@ -46,7 +46,7 @@ export default function Home() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center">
-        <div className="text-white text-2xl font-bold">Loading KTV Football...</div>
+        <div className="text-white text-2xl font-bold">Loading KTV AH Fussball...</div>
       </div>
     );
   }
