@@ -160,8 +160,8 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header mit Bild - 49px hoch - STICKY */}
-      <div className="sticky top-0 z-30">
+      {/* Header und Navigation - BEIDE STICKY */}
+      <div className="sticky top-0 z-30 bg-white">
         <div className="bg-ktv-red h-[49px] w-full">
           <img 
             src={HEADER_IMAGE} 
@@ -171,26 +171,30 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
         </div>
         
         {/* Navigation Bar */}
-        <div className="sticky bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">Anmeldung</h1>
-          <div className="flex items-center gap-4">
-            <span className="text-lg font-semibold text-gray-700">{currentUser.nickname}</span>
-            {currentUser.is_admin && (
-              <button
-                onClick={() => onSwitchView('admin')}
-                className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition text-gray-700"
-                title="Admin-Bereich"
-              >
-                <Settings className="w-6 h-6" />
+        <div className="bg-white shadow-sm border-b">
+          <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 className="text-2xl font-bold text-gray-900">Anmeldung</h1>
+            <div className="flex items-center gap-4">
+              <span className="text-lg font-semibold text-gray-700">{currentUser.nickname}</span>
+              {currentUser.is_admin && (
+                <button
+                  onClick={() => onSwitchView('admin')}
+                  className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition text-gray-700"
+                  title="Admin-Bereich"
+                >
+                  <Settings className="w-6 h-6" />
+                </button>
+              )}
+              <button onClick={onLogout} className="text-gray-600 hover:text-gray-800 transition">
+                <LogOut className="w-6 h-6" />
               </button>
-            )}
-            <button onClick={onLogout} className="text-gray-600 hover:text-gray-800 transition">
-              <LogOut className="w-6 h-6" />
-            </button>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Content */}
+      <div className="max-w-7xl mx-auto p-4">
         {!currentUser.is_active && (
           <div className="mb-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-start gap-2">
             <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
@@ -532,4 +536,4 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
       )}
     </div>
   );
-}
+        }
