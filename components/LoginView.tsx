@@ -158,7 +158,7 @@ export default function LoginView({ onLogin }: LoginViewProps) {
       <div className="max-w-md mx-auto mt-20 px-4">
         <div className="bg-white rounded-lg shadow-lg p-8">
           <h1 className="text-2xl font-bold text-gray-800 text-center mb-6">
-            KTV Fussball Login
+            KTV AH Fussball
           </h1>
           
           {error && (
