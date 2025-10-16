@@ -1,7 +1,7 @@
 {
   "name": "KTV Fußball",
   "short_name": "KTV",
-  "description": "Vereins-Management für KTV Fußball",
+  "description": "Teilnahme-Trackingsystem",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
