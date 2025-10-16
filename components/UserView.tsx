@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { LogOut, MessageSquare, Check, X, AlertCircle } from 'lucide-react';
+import { LogOut, MessageSquare, Check, X, AlertCircle, Settings } from 'lucide-react';
 import { Member, Event, Registration } from '@/lib/supabase';
 import { 
   getAllMembers, 
@@ -147,7 +147,12 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
     return { members: memberCount, guests: guestCount, total: memberCount + guestCount };
   };
 
-  const sortedMembers = [...members].sort((a, b) => a.nickname.localeCompare(b.nickname));
+  // Sortiere Mitglieder: Aktueller User zuerst, dann alphabetisch
+  const sortedMembers = [...members].sort((a, b) => {
+    if (a.id === currentUser.id) return -1;
+    if (b.id === currentUser.id) return 1;
+    return a.nickname.localeCompare(b.nickname);
+  });
 
   if (loading) {
     return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Lädt...</div>;
@@ -173,9 +178,10 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
             {currentUser.is_admin && (
               <button
                 onClick={() => onSwitchView('admin')}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition text-gray-700 font-medium"
+                className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition text-gray-700"
+                title="Admin-Bereich"
               >
-                Admin-Bereich
+                <Settings className="w-6 h-6" />
               </button>
             )}
             <button onClick={onLogout} className="text-gray-600 hover:text-gray-800 transition">
@@ -527,4 +533,4 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
       )}
     </div>
   );
- }
+}
