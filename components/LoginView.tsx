@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { X } from 'lucide-react';
 import { Member } from '@/lib/supabase';
 import { getMemberByEmail, verifyPassword, updateMemberPassword } from '@/lib/db';
 
@@ -19,6 +20,25 @@ export default function LoginView({ onLogin }: LoginViewProps) {
   const [error, setError] = useState('');
   const [mustChangePassword, setMustChangePassword] = useState(false);
   const [currentUser, setCurrentUser] = useState<Member | null>(null);
+  const [showInstallLink, setShowInstallLink] = useState(false);
+  const [showInstallPopup, setShowInstallPopup] = useState(false);
+  const [deviceType, setDeviceType] = useState<'ios' | 'android' | null>(null);
+
+  useEffect(() => {
+    // Prüfe ob Mobile Device
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    
+    // Prüfe ob bereits als App gestartet
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches 
+                      || (window.navigator as any).standalone;
+    
+    // Erkenne Device Type
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    
+    setShowInstallLink(isMobile && !isStandalone);
+    setDeviceType(isIOS ? 'ios' : isAndroid ? 'android' : null);
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,7 +110,7 @@ export default function LoginView({ onLogin }: LoginViewProps) {
     return (
       <div className="min-h-screen bg-gray-50">
         {/* Header mit Bild - 49px hoch */}
-        <div className="sticky bg-ktv-red h-[49px] w-full">
+        <div className="bg-ktv-red h-[49px] w-full">
           <img 
             src={HEADER_IMAGE} 
             alt="KTV Fussball" 
@@ -192,8 +212,125 @@ export default function LoginView({ onLogin }: LoginViewProps) {
               {loading ? 'Anmelden...' : 'Login'}
             </button>
           </form>
+
+          {/* App Installation Link */}
+          {showInstallLink && (
+            <div className="mt-4 text-center">
+              <button
+                onClick={() => setShowInstallPopup(true)}
+                className="text-blue-600 hover:text-blue-700 text-sm underline"
+              >
+                Als App installieren
+              </button>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Install Popup */}
+      {showInstallPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full relative">
+            <button
+              onClick={() => setShowInstallPopup(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            <h2 className="text-xl font-bold text-gray-800 mb-4">
+              App installieren
+            </h2>
+
+            {deviceType === 'ios' && (
+              <div className="space-y-3">
+                <p className="text-sm text-gray-600 mb-4">
+                  Installiere die App auf deinem iPhone/iPad:
+                </p>
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-xs">
+                      1
+                    </div>
+                    <p className="text-gray-700">
+                      Tippe auf das <strong>Teilen-Icon</strong> <span className="text-xl">□↑</span> unten in Safari
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-xs">
+                      2
+                    </div>
+                    <p className="text-gray-700">
+                      Scrolle nach unten und wähle <strong>"Zum Home-Bildschirm"</strong>
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-xs">
+                      3
+                    </div>
+                    <p className="text-gray-700">
+                      Tippe auf <strong>"Hinzufügen"</strong>
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 text-2xl">✅</div>
+                    <p className="text-gray-700">
+                      Die App erscheint jetzt auf deinem Home-Bildschirm!
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {deviceType === 'android' && (
+              <div className="space-y-3">
+                <p className="text-sm text-gray-600 mb-4">
+                  Installiere die App auf deinem Android-Gerät:
+                </p>
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-xs">
+                      1
+                    </div>
+                    <p className="text-gray-700">
+                      Tippe auf die <strong>3 Punkte</strong> <span className="text-xl">⋮</span> oben rechts
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-xs">
+                      2
+                    </div>
+                    <p className="text-gray-700">
+                      Wähle <strong>"Zum Startbildschirm hinzufügen"</strong> oder <strong>"App installieren"</strong>
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-xs">
+                      3
+                    </div>
+                    <p className="text-gray-700">
+                      Bestätige mit <strong>"Hinzufügen"</strong>
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 text-2xl">✅</div>
+                    <p className="text-gray-700">
+                      Die App erscheint jetzt auf deinem Startbildschirm!
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <button
+              onClick={() => setShowInstallPopup(false)}
+              className="mt-6 w-full bg-gray-200 hover:bg-gray-300 py-2 rounded-lg font-semibold"
+            >
+              Schließen
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
