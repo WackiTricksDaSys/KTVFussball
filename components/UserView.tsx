@@ -76,6 +76,7 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
       memberName: member.nickname,
       eventId: event.id,
       eventDate: new Date(event.date).toLocaleDateString('de-DE', { 
+        weekday: 'short',
         day: '2-digit', 
         month: '2-digit'
       }) + ' ' + event.time_from.substring(0, 5) + '-' + event.time_to.substring(0, 5) + ' ' + event.location,
