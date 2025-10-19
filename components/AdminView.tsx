@@ -301,7 +301,7 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
                     <td className="px-4 py-3 text-gray-600">{m.email}</td>
                     <td className="px-4 py-3">
                       <span className={`px-3 py-1 rounded-full text-sm ${m.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-                        {m.is_active ? 'Aktiv' : 'Inaktiv'}
+                        {m.is_active ? 'Aktiv' : 'Blockiert'}
                       </span>
                     </td>
                     <td className="px-4 py-3">
@@ -316,7 +316,7 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
                         onClick={() => handleToggleMemberActive(m.id, m.is_active)}
                         className={`px-4 py-1 rounded-lg text-sm font-semibold ${m.is_active ? 'bg-gray-200 hover:bg-gray-300' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
                       >
-                        {m.is_active ? 'Deaktivieren' : 'Aktivieren'}
+                        {m.is_active ? 'Blockieren' : 'Aktivieren'}
                       </button>
                     </td>
                   </tr>
@@ -464,4 +464,4 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
       </div>
     </div>
   );
- }
+}
