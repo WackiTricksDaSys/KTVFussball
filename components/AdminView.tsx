@@ -1,9 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, Calendar, LogOut, Database } from 'lucide-react';
+import { Users, Calendar, LogOut, Trash2 } from 'lucide-react';
 import { Member, Event } from '@/lib/supabase';
-import MigrationsPanel from './MigrationsPanel';
 import { 
   getAllMembers, 
   createMember, 
@@ -20,7 +19,7 @@ interface AdminViewProps {
   onSwitchView: (view: 'user') => void;
 }
 
-const HEADER_IMAGE = 'https://lh3.googleusercontent.com/d/1P2sNAGHzdN4jWfKrQ0-vJCAcq2iiM1Bl';
+const HEADER_IMAGE = '/header.png';
 
 export default function AdminView({ currentUser, onLogout, onSwitchView }: AdminViewProps) {
   const [members, setMembers] = useState<Member[]>([]);
@@ -37,7 +36,6 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
     weekdays: [] as number[] 
   });
   const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
-  const [showMigrations, setShowMigrations] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -106,11 +104,9 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
       const createdEvents = [];
       const currentDate = new Date(startDate);
       
-      // Iteriere durch alle Tage im Range
       while (currentDate <= endDate) {
-        const dayOfWeek = currentDate.getDay(); // 0 = Sonntag, 1 = Montag, etc.
+        const dayOfWeek = currentDate.getDay();
         
-        // Prüfe ob dieser Wochentag ausgewählt wurde
         if (newEvent.weekdays.includes(dayOfWeek)) {
           const dateStr = currentDate.toISOString().split('T')[0];
           const event = await createEvent(
@@ -122,7 +118,6 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
           createdEvents.push(event);
         }
         
-        // Nächster Tag
         currentDate.setDate(currentDate.getDate() + 1);
       }
       
@@ -146,6 +141,23 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
     }
   };
 
+  // Änderung 3: Event mit Registrierungen löschen
+  const handleDeleteEvent = async (eventId: number, eventDate: string) => {
+    const confirmed = window.confirm(`Event am ${eventDate} wirklich löschen? Alle Anmeldungen werden ebenfalls gelöscht.`);
+    
+    if (!confirmed) return;
+
+    try {
+      await deleteEvent(eventId);
+      setEvents(events.filter(e => e.id !== eventId));
+      setRegistrations(registrations.filter(r => r.event_id !== eventId));
+      alert('Event erfolgreich gelöscht');
+    } catch (error) {
+      alert('Fehler beim Löschen des Events');
+      console.error(error);
+    }
+  };
+
   const toggleWeekday = (day: number) => {
     if (newEvent.weekdays.includes(day)) {
       setNewEvent({
@@ -160,13 +172,7 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
     }
   };
 
-  const countYes = (eventId: number) => {
-    const yesRegs = registrations.filter(r => r.event_id === eventId && r.status === 'yes');
-    const memberCount = yesRegs.length;
-    const guestCount = yesRegs.reduce((sum, r) => sum + (r.guests || 0), 0);
-    return { members: memberCount, guests: guestCount, total: memberCount + guestCount };
-  };
-
+  // Änderung 4: Nur zukünftige Events
   const futureEvents = events.filter(e => new Date(e.date) >= new Date()).sort((a, b) => 
     new Date(a.date).getTime() - new Date(b.date).getTime()
   );
@@ -177,47 +183,37 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-md">
-        <div className="relative">
+      {/* Änderung 5: Header wie UserView */}
+      <div className="sticky top-0 z-30 bg-white">
+        <div className="bg-ktv-red h-[49px] w-full">
           <img 
             src={HEADER_IMAGE} 
             alt="KTV Fußball" 
-            className="w-full h-32 object-cover"
+            className="h-[49px] object-contain object-left"
           />
         </div>
-        <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-          <h1 className="text-xl font-semibold text-gray-800">Admin-Bereich</h1>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-600">
-              Hallo, <span className="font-semibold">{currentUser.nickname}</span>
-            </span>
-            <button
-              onClick={() => onSwitchView('user')}
-              className="text-sm px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
-            >
-              Zur Anmeldeliste
-            </button>
-            <button
-              onClick={() => setShowMigrations(!showMigrations)}
-              className="text-sm px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition flex items-center gap-1"
-            >
-              <Database className="w-4 h-4" />
-              DB-Setup
-            </button>
-            <button onClick={onLogout} className="text-gray-600 hover:text-gray-800 transition">
-              <LogOut className="w-5 h-5" />
-            </button>
+        
+        {/* Navigation Bar */}
+        <div className="bg-white shadow-sm border-b">
+          <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 className="text-2xl font-bold text-gray-900">Admin-Bereich</h1>
+            <div className="flex items-center gap-4">
+              <span className="text-lg font-semibold text-gray-700">{currentUser.nickname}</span>
+              <button
+                onClick={() => onSwitchView('user')}
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition text-gray-700 font-medium"
+              >
+                Zur Anmeldeliste
+              </button>
+              <button onClick={onLogout} className="text-gray-600 hover:text-gray-800 transition">
+                <LogOut className="w-6 h-6" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto p-6 space-y-6">
-        {/* Migrations Panel */}
-        {showMigrations && (
-          <MigrationsPanel />
-        )}
-
         {/* Generated Password Popup */}
         {generatedPassword && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -414,37 +410,37 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
             </button>
           </div>
 
-          <div className="space-y-3">
-            {futureEvents.map(e => (
-              <div key={e.id} className="p-4 border rounded-lg hover:shadow-md transition">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="font-bold text-lg text-gray-800">
-                      {new Date(e.date).toLocaleDateString('de-DE', { 
-                        weekday: 'short',
-                        day: '2-digit', 
-                        month: '2-digit',
-                        year: 'numeric'
-                      })}
-                    </div>
-                    <div className="text-gray-600">{e.time_from} - {e.time_to} Uhr</div>
-                    <div className="text-gray-600">{e.location}</div>
+          {/* Änderung 2: Kompakte Event-Liste */}
+          <div>
+            <h3 className="font-semibold mb-3 text-gray-700">Zukünftige Events</h3>
+            <div className="space-y-2">
+              {futureEvents.map(e => {
+                // Änderung 3: Wochentag ohne Komma/Punkt
+                const dateStr = new Date(e.date).toLocaleDateString('de-CH', { 
+                  weekday: 'short',
+                  day: '2-digit', 
+                  month: '2-digit',
+                  year: 'numeric'
+                });
+                const formattedDate = dateStr.slice(0, 2) + dateStr.slice(4);
+                
+                return (
+                  <div key={e.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition">
+                    <span className="font-semibold text-gray-800">{formattedDate}</span>
+                    <button
+                      onClick={() => handleDeleteEvent(e.id, formattedDate)}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                      title="Event löschen"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
                   </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-blue-600">{countYes(e.id).total}</div>
-                    <div className="text-sm text-gray-500">Zusagen</div>
-                    {countYes(e.id).guests > 0 && (
-                      <div className="text-xs text-gray-600 mt-1">
-                        +{countYes(e.id).guests} Gäste
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-            {futureEvents.length === 0 && (
-              <p className="text-gray-500 text-center py-4">Keine zukünftigen Events</p>
-            )}
+                );
+              })}
+              {futureEvents.length === 0 && (
+                <p className="text-gray-500 text-center py-4">Keine zukünftigen Events</p>
+              )}
+            </div>
           </div>
         </div>
       </div>
