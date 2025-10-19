@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, Calendar, LogOut, Trash2 } from 'lucide-react';
+import { Users, Calendar, LogOut, Trash2, Undo } from 'lucide-react';
 import { Member, Event } from '@/lib/supabase';
 import { 
   getAllMembers, 
@@ -196,14 +196,15 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
         {/* Navigation Bar */}
         <div className="bg-white shadow-sm border-b">
           <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">Admin-Bereich</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Konfig</h1>
             <div className="flex items-center gap-4">
               <span className="text-lg font-semibold text-gray-700">{currentUser.nickname}</span>
               <button
                 onClick={() => onSwitchView('user')}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition text-gray-700 font-medium"
+                className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition text-gray-700"
+                title="Zur Anmeldeliste"
               >
-                Zur Anmeldeliste
+                <Undo className="w-6 h-6" />
               </button>
               <button onClick={onLogout} className="text-gray-600 hover:text-gray-800 transition">
                 <LogOut className="w-6 h-6" />
@@ -277,7 +278,24 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {members.map(m => (
+                {members
+                  .sort((a, b) => {
+                    // Gruppe 1: Admins (aktiv)
+                    if (a.is_admin && a.is_active && (!b.is_admin || !b.is_active)) return -1;
+                    if (b.is_admin && b.is_active && (!a.is_admin || !a.is_active)) return 1;
+                    
+                    // Gruppe 2: Aktive User (nicht-Admin)
+                    if (a.is_active && !a.is_admin && (!b.is_active || b.is_admin)) return -1;
+                    if (b.is_active && !b.is_admin && (!a.is_active || a.is_admin)) return 1;
+                    
+                    // Gruppe 3: Deaktivierte
+                    if (!a.is_active && b.is_active) return 1;
+                    if (!b.is_active && a.is_active) return -1;
+                    
+                    // Innerhalb jeder Gruppe: alphabetisch
+                    return a.nickname.localeCompare(b.nickname);
+                  })
+                  .map(m => (
                   <tr key={m.id} className={!m.is_active ? 'opacity-50' : ''}>
                     <td className="px-4 py-3 font-semibold">{m.nickname}</td>
                     <td className="px-4 py-3 text-gray-600">{m.email}</td>
@@ -446,4 +464,4 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
       </div>
     </div>
   );
-}
+ }
