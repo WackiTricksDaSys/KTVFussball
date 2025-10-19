@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { LogOut, MessageSquare, Check, X, AlertCircle, Settings } from 'lucide-react';
+import { LogOut, MessageSquare, Check, X, AlertCircle, Settings, Key } from 'lucide-react';
 import { Member, Event, Registration } from '@/lib/supabase';
 import { 
   getAllMembers, 
@@ -11,6 +11,7 @@ import {
   isEventLocked
 } from '@/lib/db';
 import { getCurrentSeason, getItemsForSeason, getItemKey } from '@/lib/season-config';
+import { updateMemberPassword } from '@/lib/db';
 
 interface UserViewProps {
   currentUser: Member;
@@ -26,6 +27,11 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentSeasonItems, setCurrentSeasonItems] = useState<string[]>([]);
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordLoading, setPasswordLoading] = useState(false);
   const [editPopup, setEditPopup] = useState<{
     memberId: number;
     memberName: string;
@@ -71,21 +77,28 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
     const isOwn = member.id === currentUser.id;
     const locked = isEventLocked(event);
     
+    // Änderung 2: Admin-Lock aufheben
+    const isLockedForUser = locked && !currentUser.is_admin;
+    
+    const dateStr = new Date(event.date).toLocaleDateString('de-CH', { 
+      weekday: 'short',
+      day: '2-digit', 
+      month: '2-digit'
+    });
+    // Änderung 1: Komma und Punkt entfernen (Position 2-3)
+    const formattedDate = dateStr.slice(0, 2) + dateStr.slice(4);
+    
     setEditPopup({
       memberId: member.id,
       memberName: member.nickname,
       eventId: event.id,
-      eventDate: new Date(event.date).toLocaleDateString('de-DE', { 
-        weekday: 'short',
-        day: '2-digit', 
-        month: '2-digit'
-      }) + ' ' + event.time_from.substring(0, 5) + '-' + event.time_to.substring(0, 5) + ' ' + event.location,
+      eventDate: formattedDate + ' ' + event.time_from.substring(0, 5) + '-' + event.time_to.substring(0, 5) + ' ' + event.location,
       status: reg?.status ?? 'pending',
       comment: reg?.comment ?? '',
       guests: reg?.guests ?? 0,
       items: reg?.items ?? {},
       isOwn,
-      locked
+      locked: isLockedForUser
     });
   };
 
@@ -141,6 +154,37 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
     }
   };
 
+  // Änderung 3: Passwort ändern Handler
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError('');
+
+    if (newPassword.length < 6) {
+      setPasswordError('Passwort muss mindestens 6 Zeichen lang sein');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Passwörter stimmen nicht überein');
+      return;
+    }
+
+    setPasswordLoading(true);
+
+    try {
+      await updateMemberPassword(currentUser.id, newPassword);
+      setShowPasswordChange(false);
+      setNewPassword('');
+      setConfirmPassword('');
+      alert('Passwort erfolgreich geändert!');
+    } catch (err) {
+      setPasswordError('Fehler beim Ändern des Passworts');
+      console.error(err);
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
   const countTotal = (eventId: number) => {
     const allRegs = registrations.filter(r => r.event_id === eventId && (r.status === 'yes' || r.status === 'no'));
     const memberCount = registrations.filter(r => r.event_id === eventId && r.status === 'yes').length;
@@ -157,6 +201,79 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
 
   if (loading) {
     return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Lädt...</div>;
+  }
+
+  // Änderung 3: Passwort-Ändern Ansicht
+  if (showPasswordChange) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="bg-ktv-red h-[49px] w-full">
+          <img 
+            src={HEADER_IMAGE} 
+            alt="KTV Fussball" 
+            className="h-[49px] object-contain object-left"
+          />
+        </div>
+
+        <div className="max-w-md mx-auto mt-20 px-4">
+          <div className="bg-white rounded-lg shadow-lg p-8">
+            <h1 className="text-2xl font-bold text-gray-800 text-center mb-2">
+              Passwort ändern
+            </h1>
+            <p className="text-sm text-gray-600 text-center mb-6">
+              Neues Passwort festlegen
+            </p>
+            
+            {passwordError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+                {passwordError}
+              </div>
+            )}
+
+            <form onSubmit={handlePasswordChange} className="space-y-4">
+              <input
+                type="password"
+                placeholder="Neues Passwort (min. 6 Zeichen)"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                disabled={passwordLoading}
+              />
+              <input
+                type="password"
+                placeholder="Passwort bestätigen"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                disabled={passwordLoading}
+              />
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  disabled={passwordLoading}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 rounded-lg transition"
+                >
+                  {passwordLoading ? 'Wird geändert...' : 'Passwort ändern'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPasswordChange(false);
+                    setNewPassword('');
+                    setConfirmPassword('');
+                    setPasswordError('');
+                  }}
+                  disabled={passwordLoading}
+                  className="flex-1 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-400 text-gray-800 font-semibold py-3 rounded-lg transition"
+                >
+                  Abbrechen
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -177,6 +294,14 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
             <h1 className="text-2xl font-bold text-gray-900">Anmeldung</h1>
             <div className="flex items-center gap-4">
               <span className="text-lg font-semibold text-gray-700">{currentUser.nickname}</span>
+              {/* Änderung 3: Schlüssel-Button für ALLE User */}
+              <button
+                onClick={() => setShowPasswordChange(true)}
+                className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition text-gray-700"
+                title="Passwort ändern"
+              >
+                <Key className="w-6 h-6" />
+              </button>
               {currentUser.is_admin && (
                 <button
                   onClick={() => onSwitchView('admin')}
@@ -217,19 +342,29 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
                     <th className="px-4 py-3 text-left font-bold text-gray-900 bg-gray-50 sticky left-0 z-20 min-w-[140px]">
                       {/* Empty header cell */}
                     </th>
-                    {events.map(event => (
-                      <th key={event.id} className="px-6 py-3 text-center bg-gray-50 min-w-[160px]">
-                        <div className="font-bold text-gray-900 text-base">
-                          {new Date(event.date).toLocaleDateString('de-DE', { weekday:'short', day: '2-digit', month: '2-digit' })}
-                        </div>
-                        <div className="text-sm text-gray-600 font-normal">
-                          {event.time_from.substring(0, 5)}-{event.time_to.substring(0, 5)}
-                        </div>
-                        <div className="text-sm text-gray-500 font-normal">
-                          {event.location}
-                        </div>
-                      </th>
-                    ))}
+                    {events.map(event => {
+                      // Änderung 1: Wochentag ohne Komma und Punkt
+                      const dateStr = new Date(event.date).toLocaleDateString('de-CH', { 
+                        weekday: 'short', 
+                        day: '2-digit', 
+                        month: '2-digit' 
+                      });
+                      const formattedDate = dateStr.slice(0, 2) + dateStr.slice(4);
+                      
+                      return (
+                        <th key={event.id} className="px-6 py-3 text-center bg-gray-50 min-w-[160px]">
+                          <div className="font-bold text-gray-900 text-base">
+                            {formattedDate}
+                          </div>
+                          <div className="text-sm text-gray-600 font-normal">
+                            {event.time_from.substring(0, 5)}-{event.time_to.substring(0, 5)}
+                          </div>
+                          <div className="text-sm text-gray-500 font-normal">
+                            {event.location}
+                          </div>
+                        </th>
+                      );
+                    })}
                   </tr>
                 </thead>
                 <tbody>
@@ -322,7 +457,7 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
                                   <div className="bg-gray-100 rounded-lg p-4 h-16"></div>
                                 )}
                                 
-                                {locked && (
+                                {locked && !currentUser.is_admin && (
                                   <span className="absolute top-1 left-1 text-xs">🔒</span>
                                 )}
                               </button>
@@ -537,4 +672,4 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
       )}
     </div>
   );
-        }
+ }
