@@ -11,7 +11,6 @@ https://raw.githubusercontent.com/WackiTricksDaSys/KTVFussball/main/app/page.tsx
 https://raw.githubusercontent.com/WackiTricksDaSys/KTVFussball/main/app/globals.css
 https://raw.githubusercontent.com/WackiTricksDaSys/KTVFussball/main/components/AdminView.tsx
 https://raw.githubusercontent.com/WackiTricksDaSys/KTVFussball/main/components/LoginView.tsx
-https://raw.githubusercontent.com/WackiTricksDaSys/KTVFussball/main/components/MigrationsPanel.tsx
 https://raw.githubusercontent.com/WackiTricksDaSys/KTVFussball/main/components/UserView.tsx
 https://raw.githubusercontent.com/WackiTricksDaSys/KTVFussball/main/lib/db.ts
 https://raw.githubusercontent.com/WackiTricksDaSys/KTVFussball/main/lib/migrations.ts
@@ -23,13 +22,11 @@ https://raw.githubusercontent.com/WackiTricksDaSys/KTVFussball/main/lib/__tests_
 https://raw.githubusercontent.com/WackiTricksDaSys/KTVFussball/main/migrations/001_initial_setup.sql
 https://raw.githubusercontent.com/WackiTricksDaSys/KTVFussball/main/migrations/002_add_guests.sql
 https://raw.githubusercontent.com/WackiTricksDaSys/KTVFussball/main/migrations/003_add_season_and_utensils.sql
-https://raw.githubusercontent.com/WackiTricksDaSys/KTVFussball/main/public/header.jpg
+https://raw.githubusercontent.com/WackiTricksDaSys/KTVFussball/main/public/header.png
 https://raw.githubusercontent.com/WackiTricksDaSys/KTVFussball/main/public/manifest.json
 https://raw.githubusercontent.com/WackiTricksDaSys/KTVFussball/main/.env.example
 https://raw.githubusercontent.com/WackiTricksDaSys/KTVFussball/main/.gitignore
-https://raw.githubusercontent.com/WackiTricksDaSys/KTVFussball/main/DEPLOYMENT_CHECKLIST.md
 https://raw.githubusercontent.com/WackiTricksDaSys/KTVFussball/main/FINALE_ZUSAMMENFASSUNG.md
-https://raw.githubusercontent.com/WackiTricksDaSys/KTVFussball/main/HEADER_IMAGE_SETUP.md
 https://raw.githubusercontent.com/WackiTricksDaSys/KTVFussball/main/jest.config.js
 https://raw.githubusercontent.com/WackiTricksDaSys/KTVFussball/main/jest.setup.js
 https://raw.githubusercontent.com/WackiTricksDaSys/KTVFussball/main/next.config.js
@@ -42,9 +39,6 @@ https://raw.githubusercontent.com/WackiTricksDaSys/KTVFussball/main/tailwind.con
 https://raw.githubusercontent.com/WackiTricksDaSys/KTVFussball/main/tsconfig.json
 ```
 
-**Hinweis:** Die PDF-Datei (`KTV Fussball - Final...pdf`) kann nicht als RAW-URL abgerufen werden.
-
----
 
 ## Übersicht
 
@@ -64,8 +58,7 @@ KTVFussball/
 │
 ├── components/
 │   ├── AdminView.tsx                      # Admin-Bereich
-│   ├── LoginView.tsx                      # Login + Passwort-Änderung
-│   ├── MigrationsPanel.tsx                # Migrations Panel für Admin
+│   ├── LoginView.tsx                      # Login + Passwort-Ändering
 │   └── UserView.tsx                       # User Anmeldeliste
 │
 ├── lib/
@@ -84,17 +77,14 @@ KTVFussball/
 │   └── 003_add_season_and_utensils.sql    # Add Season & Utensils
 │
 ├── public/
-│   ├── header.jpg                         # Header Image
+│   ├── header.png                         # Header Image
 │   └── manifest.json                      # PWA Manifest
 │
 ├── .env.example                           # Environment Variables Template
 ├── .gitignore                             # Git Ignore Rules
-├── DEPLOYMENT_CHECKLIST.md                # Deployment Checkliste
 ├── FINALE_ZUSAMMENFASSUNG.md              # Finale Zusammenfassung
-├── HEADER_IMAGE_SETUP.md                  # Header Image Setup Guide
 ├── jest.config.js                         # Jest Configuration
 ├── jest.setup.js                          # Jest Setup
-├── KTV Fussball - Final...pdf             # PDF Dokumentation
 ├── next.config.js                         # Next.js Configuration
 ├── package.json                           # Dependencies
 ├── postcss.config.js                      # PostCSS Configuration
