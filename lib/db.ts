@@ -1,4 +1,5 @@
 import { supabase, Member, Event, Registration } from './supabase';
+import { Season } from './season-config';
 import bcrypt from 'bcryptjs';
 
 // Generate random password
@@ -115,12 +116,7 @@ export async function getFutureEvents(): Promise<Event[]> {
   return data || [];
 }
 
-export async function createEvent(
-  date: string, 
-  timeFrom: string, 
-  timeTo: string, 
-  location: string
-): Promise<Event> {
+export async function createEvent(date: string, timeFrom: string, timeTo: string, location: string): Promise<Event> {
   const { data, error } = await supabase
     .from('events')
     .insert({
@@ -172,8 +168,7 @@ export async function upsertRegistration(
   eventId: number, 
   status: 'yes' | 'no' | 'pending',
   comment?: string,
-  guests?: number,
-  items?: Record<string, boolean>  // ⬅️ 6. Parameter hinzufügen!
+  guests?: number
 ): Promise<Registration> {
   const { data, error } = await supabase
     .from('registrations')
@@ -183,7 +178,6 @@ export async function upsertRegistration(
       status,
       comment: comment || null,
       guests: guests || 0,
-      items: items || null,  // ⬅️ items speichern!
       updated_at: new Date().toISOString()
     }, {
       onConflict: 'member_id,event_id'
@@ -201,4 +195,34 @@ export function isEventLocked(event: Event): boolean {
   const now = new Date();
   const oneHourBefore = new Date(eventDateTime.getTime() - 60 * 60 * 1000);
   return now >= oneHourBefore;
+}
+
+// Season Settings
+export async function getCurrentSeason(): Promise<Season> {
+  const { data, error } = await supabase
+    .from('settings')
+    .select('value')
+    .eq('key', 'current_season')
+    .single();
+  
+  if (error || !data) {
+    // Default to summer if not set
+    return 'summer';
+  }
+  
+  return data.value as Season;
+}
+
+export async function setCurrentSeason(season: Season): Promise<void> {
+  const { error } = await supabase
+    .from('settings')
+    .upsert({
+      key: 'current_season',
+      value: season,
+      updated_at: new Date().toISOString()
+    }, {
+      onConflict: 'key'
+    });
+  
+  if (error) throw error;
 }
