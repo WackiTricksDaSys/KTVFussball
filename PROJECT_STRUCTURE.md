@@ -22,6 +22,7 @@ https://raw.githubusercontent.com/WackiTricksDaSys/KTVFussball/main/lib/__tests_
 https://raw.githubusercontent.com/WackiTricksDaSys/KTVFussball/main/migrations/001_initial_setup.sql
 https://raw.githubusercontent.com/WackiTricksDaSys/KTVFussball/main/migrations/002_add_guests.sql
 https://raw.githubusercontent.com/WackiTricksDaSys/KTVFussball/main/migrations/003_add_season_and_utensils.sql
+https://github.com/WackiTricksDaSys/KTVFussball/blob/main/migrations/004_add_items_to_registrations.sql
 https://raw.githubusercontent.com/WackiTricksDaSys/KTVFussball/main/public/header.png
 https://raw.githubusercontent.com/WackiTricksDaSys/KTVFussball/main/public/manifest.json
 https://raw.githubusercontent.com/WackiTricksDaSys/KTVFussball/main/.env.example
