@@ -201,14 +201,15 @@ describe('Database Functions', () => {
       });
 
       it('should throw error when update fails', async () => {
+        const mockError = new Error('Database error');
         const mockFrom = jest.fn().mockReturnValue({
           upsert: jest.fn().mockResolvedValue({
-            error: { message: 'Database error' }
+            error: mockError
           })
         });
         (supabase.from as jest.Mock) = mockFrom;
 
-        await expect(setCurrentSeason('summer')).rejects.toThrow();
+        await expect(setCurrentSeason('summer')).rejects.toThrow('Database error');
       });
     });
   });
