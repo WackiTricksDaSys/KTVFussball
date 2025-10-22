@@ -1,4 +1,5 @@
 import { supabase, Member, Event, Registration } from './supabase';
+import { Season } from './season-config';
 import bcrypt from 'bcryptjs';
 
 // Generate random password
@@ -208,4 +209,34 @@ export function isEventLocked(event: Event): boolean {
   const oneHourBefore = new Date(eventDateTime.getTime() - 60 * 60 * 1000);
   
   return now >= oneHourBefore;
+}
+
+// Season Settings
+export async function getCurrentSeason(): Promise<Season> {
+  const { data, error } = await supabase
+    .from('settings')
+    .select('value')
+    .eq('key', 'current_season')
+    .single();
+  
+  if (error || !data) {
+    // Default to summer if not set
+    return 'summer';
+  }
+  
+  return data.value as Season;
+}
+
+export async function setCurrentSeason(season: Season): Promise<void> {
+  const { error } = await supabase
+    .from('settings')
+    .upsert({
+      key: 'current_season',
+      value: season,
+      updated_at: new Date().toISOString()
+    }, {
+      onConflict: 'key'
+    });
+  
+  if (error) throw error;
 }
