@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Users, Calendar, LogOut, Trash2, Undo } from 'lucide-react';
 import { Member, Event } from '@/lib/supabase';
+import { Season } from '@/lib/season-config';
 import { 
   getAllMembers, 
   createMember, 
@@ -10,8 +11,11 @@ import {
   getAllEvents,
   createEvent,
   deleteEvent,
-  getAllRegistrations
+  getAllRegistrations,
+  getCurrentSeason,
+  setCurrentSeason
 } from '@/lib/db';
+import { getSeasonSettings } from '@/lib/season-config';
 
 interface AdminViewProps {
   currentUser: Member;
@@ -26,6 +30,7 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
   const [events, setEvents] = useState<Event[]>([]);
   const [registrations, setRegistrations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentSeason, setCurrentSeasonState] = useState<Season>('summer');
   const [newMember, setNewMember] = useState({ nickname: '', email: '' });
   const [newEvent, setNewEvent] = useState({ 
     location: '', 
@@ -39,6 +44,7 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
 
   useEffect(() => {
     loadData();
+    loadSeason();
   }, []);
 
   const loadData = async () => {
@@ -55,6 +61,21 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
       console.error('Error loading data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadSeason = async () => {
+    const season = await getCurrentSeason();
+    setCurrentSeasonState(season);
+  };
+
+  const handleSeasonChange = async (season: Season) => {
+    try {
+      await setCurrentSeason(season);
+      setCurrentSeasonState(season);
+    } catch (error) {
+      alert('Fehler beim Ändern der Saison');
+      console.error(error);
     }
   };
 
@@ -141,7 +162,6 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
     }
   };
 
-  // Änderung 3: Event mit Registrierungen löschen
   const handleDeleteEvent = async (eventId: number, eventDate: string) => {
     const confirmed = window.confirm(`Event am ${eventDate} wirklich löschen? Alle Anmeldungen werden ebenfalls gelöscht.`);
     
@@ -172,10 +192,11 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
     }
   };
 
-  // Änderung 4: Nur zukünftige Events
   const futureEvents = events.filter(e => new Date(e.date) >= new Date()).sort((a, b) => 
     new Date(a.date).getTime() - new Date(b.date).getTime()
   );
+
+  const seasonSettings = getSeasonSettings(currentSeason);
 
   if (loading) {
     return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Lädt...</div>;
@@ -183,7 +204,6 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Änderung 5: Header wie UserView */}
       <div className="sticky top-0 z-30 bg-white">
         <div className="bg-ktv-red h-[49px] w-full">
           <img 
@@ -193,7 +213,6 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
           />
         </div>
         
-        {/* Navigation Bar */}
         <div className="bg-white shadow-sm border-b">
           <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
             <h1 className="text-2xl font-bold text-gray-900">Konfig</h1>
@@ -215,7 +234,6 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
       </div>
 
       <div className="max-w-7xl mx-auto p-6 space-y-6">
-        {/* Generated Password Popup */}
         {generatedPassword && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
             <h3 className="font-bold text-green-800 mb-2">Mitglied erfolgreich erstellt!</h3>
@@ -233,98 +251,6 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
             </button>
           </div>
         )}
-
-        {/* Mitglieder-Verwaltung */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-bold mb-4 flex items-center text-gray-800">
-            <Users className="w-5 h-5 mr-2" />
-            Mitglieder-Verwaltung
-          </h2>
-          
-          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-            <h3 className="font-semibold mb-3 text-gray-700">Neues Mitglied hinzufügen</h3>
-            <div className="space-y-3">
-              <input
-                placeholder="Nickname"
-                value={newMember.nickname}
-                onChange={(e) => setNewMember({...newMember, nickname: e.target.value})}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
-              <input
-                type="email"
-                placeholder="E-Mail"
-                value={newMember.email}
-                onChange={(e) => setNewMember({...newMember, email: e.target.value})}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
-              <button
-                onClick={handleAddMember}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold"
-              >
-                Hinzufügen
-              </button>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-gray-700">Nickname</th>
-                  <th className="px-4 py-3 text-left text-gray-700">E-Mail</th>
-                  <th className="px-4 py-3 text-left text-gray-700">Status</th>
-                  <th className="px-4 py-3 text-left text-gray-700">Rolle</th>
-                  <th className="px-4 py-3 text-left text-gray-700">Aktion</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {members
-                  .sort((a, b) => {
-                    // Gruppe 1: Admins (aktiv)
-                    if (a.is_admin && a.is_active && (!b.is_admin || !b.is_active)) return -1;
-                    if (b.is_admin && b.is_active && (!a.is_admin || !a.is_active)) return 1;
-                    
-                    // Gruppe 2: Aktive User (nicht-Admin)
-                    if (a.is_active && !a.is_admin && (!b.is_active || b.is_admin)) return -1;
-                    if (b.is_active && !b.is_admin && (!a.is_active || a.is_admin)) return 1;
-                    
-                    // Gruppe 3: Deaktivierte
-                    if (!a.is_active && b.is_active) return 1;
-                    if (!b.is_active && a.is_active) return -1;
-                    
-                    // Innerhalb jeder Gruppe: alphabetisch
-                    return a.nickname.localeCompare(b.nickname);
-                  })
-                  .map(m => (
-                  <tr key={m.id} className={!m.is_active ? 'opacity-50' : ''}>
-                    <td className="px-4 py-3 font-semibold">{m.nickname}</td>
-                    <td className="px-4 py-3 text-gray-600">{m.email}</td>
-                    <td className="px-4 py-3">
-                      <span className={`px-3 py-1 rounded-full text-sm ${m.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-                        {m.is_active ? 'Aktiv' : 'Blockiert'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      {m.is_admin && (
-                        <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-semibold">
-                          Admin
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <button
-                        onClick={() => handleToggleMemberActive(m.id, m.is_active)}
-                        className={`px-4 py-1 rounded-lg text-sm font-semibold ${m.is_active ? 'bg-gray-200 hover:bg-gray-300' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
-                      >
-                        {m.is_active ? 'Blockieren' : 'Aktivieren'}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
 
         {/* Event-Verwaltung */}
         <div className="bg-white rounded-lg shadow p-6">
@@ -428,12 +354,10 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
             </button>
           </div>
 
-          {/* Änderung 2: Kompakte Event-Liste */}
           <div>
             <h3 className="font-semibold mb-3 text-gray-700">Zukünftige Events</h3>
             <div className="space-y-2">
               {futureEvents.map(e => {
-                // Änderung 3: Wochentag ohne Komma/Punkt
                 const dateStr = new Date(e.date).toLocaleDateString('de-CH', { 
                   weekday: 'short',
                   day: '2-digit', 
@@ -458,6 +382,139 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
               {futureEvents.length === 0 && (
                 <p className="text-gray-500 text-center py-4">Keine zukünftigen Events</p>
               )}
+            </div>
+          </div>
+        </div>
+
+        {/* Mitglieder-Verwaltung */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-xl font-bold mb-4 flex items-center text-gray-800">
+            <Users className="w-5 h-5 mr-2" />
+            Mitglieder-Verwaltung
+          </h2>
+          
+          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+            <h3 className="font-semibold mb-3 text-gray-700">Neues Mitglied hinzufügen</h3>
+            <div className="space-y-3">
+              <input
+                placeholder="Nickname"
+                value={newMember.nickname}
+                onChange={(e) => setNewMember({...newMember, nickname: e.target.value})}
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+              <input
+                type="email"
+                placeholder="E-Mail"
+                value={newMember.email}
+                onChange={(e) => setNewMember({...newMember, email: e.target.value})}
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                onClick={handleAddMember}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold"
+              >
+                Hinzufügen
+              </button>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-gray-700">Nickname</th>
+                  <th className="px-4 py-3 text-left text-gray-700">E-Mail</th>
+                  <th className="px-4 py-3 text-left text-gray-700">Status</th>
+                  <th className="px-4 py-3 text-left text-gray-700">Rolle</th>
+                  <th className="px-4 py-3 text-left text-gray-700">Aktion</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {members
+                  .sort((a, b) => {
+                    if (a.is_admin && a.is_active && (!b.is_admin || !b.is_active)) return -1;
+                    if (b.is_admin && b.is_active && (!a.is_admin || !a.is_active)) return 1;
+                    if (a.is_active && !a.is_admin && (!b.is_active || b.is_admin)) return -1;
+                    if (b.is_active && !b.is_admin && (!a.is_active || a.is_admin)) return 1;
+                    if (!a.is_active && b.is_active) return 1;
+                    if (!b.is_active && a.is_active) return -1;
+                    return a.nickname.localeCompare(b.nickname);
+                  })
+                  .map(m => (
+                  <tr key={m.id} className={!m.is_active ? 'opacity-50' : ''}>
+                    <td className="px-4 py-3 font-semibold">{m.nickname}</td>
+                    <td className="px-4 py-3 text-gray-600">{m.email}</td>
+                    <td className="px-4 py-3">
+                      <span className={`px-3 py-1 rounded-full text-sm ${m.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                        {m.is_active ? 'Aktiv' : 'Blockiert'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {m.is_admin && (
+                        <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-semibold">
+                          Admin
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => handleToggleMemberActive(m.id, m.is_active)}
+                        className={`px-4 py-1 rounded-lg text-sm font-semibold ${m.is_active ? 'bg-gray-200 hover:bg-gray-300' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
+                      >
+                        {m.is_active ? 'Blockieren' : 'Aktivieren'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Saison & Utensilien */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-3xl font-bold mb-6 text-gray-900">Saison & Utensilien</h2>
+          
+          <div className="grid grid-cols-2 gap-4 mb-8">
+            <button
+              onClick={() => handleSeasonChange('summer')}
+              className={`px-8 py-6 rounded-2xl font-bold text-2xl transition flex items-center justify-center gap-3 ${
+                currentSeason === 'summer'
+                  ? 'bg-orange-500 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <span className="text-3xl">☀️</span>
+              Sommer
+            </button>
+            <button
+              onClick={() => handleSeasonChange('winter')}
+              className={`px-8 py-6 rounded-2xl font-bold text-2xl transition flex items-center justify-center gap-3 ${
+                currentSeason === 'winter'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <span className="text-3xl">❄️</span>
+              Winter
+            </button>
+          </div>
+
+          <div className="bg-gray-50 rounded-xl p-6">
+            <h3 className="text-2xl font-bold mb-4 text-gray-900">Benötigte Utensilien:</h3>
+            <ul className="space-y-3">
+              {seasonSettings.items.map(item => (
+                <li key={item} className="text-xl text-gray-700 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-gray-900 rounded-full"></span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <p className="text-lg text-gray-700">
+                <span className="font-semibold">Mindestanzahl Spieler:</span>{' '}
+                <span className="text-2xl font-bold text-blue-600">{seasonSettings.minPlayers}</span>
+              </p>
             </div>
           </div>
         </div>
