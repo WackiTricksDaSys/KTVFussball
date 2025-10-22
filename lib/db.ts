@@ -103,12 +103,14 @@ export async function getAllEvents(): Promise<Event[]> {
 }
 
 export async function getFutureEvents(): Promise<Event[]> {
-  const today = new Date().toISOString().split('T')[0];
+  // Lokales Datum verwenden statt UTC
+  const today = new Date();
+  const localDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   
   const { data, error } = await supabase
     .from('events')
     .select('*')
-    .gte('date', today)
+    .gte('date', localDate)
     .order('date', { ascending: true });
   
   if (error) throw error;
@@ -173,7 +175,7 @@ export async function upsertRegistration(
   status: 'yes' | 'no' | 'pending',
   comment?: string,
   guests?: number,
-  items?: Record<string, boolean>  // ⬅️ 6. Parameter hinzufügen!
+  items?: Record<string, boolean>
 ): Promise<Registration> {
   const { data, error } = await supabase
     .from('registrations')
@@ -183,7 +185,7 @@ export async function upsertRegistration(
       status,
       comment: comment || null,
       guests: guests || 0,
-      items: items || null,  // ⬅️ items speichern!
+      items: items || null,
       updated_at: new Date().toISOString()
     }, {
       onConflict: 'member_id,event_id'
@@ -197,8 +199,13 @@ export async function upsertRegistration(
 
 // Check if event is locked (1 hour before start)
 export function isEventLocked(event: Event): boolean {
-  const eventDateTime = new Date(`${event.date}T${event.time_from}`);
+  // Datum und Zeit explizit als lokale Zeit interpretieren
+  const [year, month, day] = event.date.split('-').map(Number);
+  const [hours, minutes] = event.time_from.split(':').map(Number);
+  
+  const eventDateTime = new Date(year, month - 1, day, hours, minutes);
   const now = new Date();
   const oneHourBefore = new Date(eventDateTime.getTime() - 60 * 60 * 1000);
+  
   return now >= oneHourBefore;
 }
