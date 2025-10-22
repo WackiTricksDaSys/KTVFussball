@@ -1,4 +1,4 @@
-import { getItemsForSeason, getItemKey, getCurrentSeason } from '../season-config';
+import { getItemsForSeason, getItemKey, getMinPlayersForSeason, getSeasonSettings } from '../season-config';
 
 describe('Season Configuration', () => {
   describe('getItemsForSeason', () => {
@@ -48,22 +48,27 @@ describe('Season Configuration', () => {
     });
   });
 
-  describe('getCurrentSeason', () => {
-    it('should return summer for months April-September', () => {
-      // Mock different months
-      const summerMonths = [4, 5, 6, 7, 8, 9];
-      summerMonths.forEach(month => {
-        jest.spyOn(Date.prototype, 'getMonth').mockReturnValue(month - 1);
-        expect(getCurrentSeason()).toBe('summer');
-      });
+  describe('getMinPlayersForSeason', () => {
+    it('should return 12 for summer', () => {
+      expect(getMinPlayersForSeason('summer')).toBe(12);
     });
 
-    it('should return winter for months October-March', () => {
-      const winterMonths = [1, 2, 3, 10, 11, 12];
-      winterMonths.forEach(month => {
-        jest.spyOn(Date.prototype, 'getMonth').mockReturnValue(month - 1);
-        expect(getCurrentSeason()).toBe('winter');
-      });
+    it('should return 8 for winter', () => {
+      expect(getMinPlayersForSeason('winter')).toBe(8);
+    });
+  });
+
+  describe('getSeasonSettings', () => {
+    it('should return complete settings for summer', () => {
+      const settings = getSeasonSettings('summer');
+      expect(settings.items).toEqual(['Schlüssel', 'Ball', 'Pumpe', 'Überzieher', 'Handschuhe']);
+      expect(settings.minPlayers).toBe(12);
+    });
+
+    it('should return complete settings for winter', () => {
+      const settings = getSeasonSettings('winter');
+      expect(settings.items).toEqual(['Hallenball', 'Pumpe', 'Überzieher']);
+      expect(settings.minPlayers).toBe(8);
     });
   });
 });
