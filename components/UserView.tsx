@@ -8,10 +8,11 @@ import {
   getFutureEvents,
   getAllRegistrations,
   upsertRegistration,
-  isEventLocked
+  isEventLocked,
+  updateMemberPassword,
+  getCurrentSeason
 } from '@/lib/db';
-import { getCurrentSeason, getItemsForSeason, getItemKey } from '@/lib/season-config';
-import { updateMemberPassword } from '@/lib/db';
+import { getItemsForSeason, getItemKey } from '@/lib/season-config';
 
 interface UserViewProps {
   currentUser: Member;
@@ -47,8 +48,7 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
 
   useEffect(() => {
     loadData();
-    const season = getCurrentSeason();
-    setCurrentSeasonItems(getItemsForSeason(season));
+    loadSeasonItems();
   }, []);
 
   const loadData = async () => {
@@ -66,6 +66,11 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadSeasonItems = async () => {
+    const season = await getCurrentSeason();
+    setCurrentSeasonItems(getItemsForSeason(season));
   };
 
   const getRegistration = (memberId: number, eventId: number) => {
@@ -672,4 +677,4 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
       )}
     </div>
   );
- }
+      }
