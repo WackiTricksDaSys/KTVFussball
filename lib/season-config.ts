@@ -1,27 +1,43 @@
-// Saison-Konfiguration für Utensilien
+// Saison-Konfiguration für Utensilien und Einstellungen
 
 export type Season = 'summer' | 'winter';
 
-export interface SeasonConfig {
-  summer: string[];
-  winter: string[];
+export interface SeasonSettings {
+  items: string[];
+  minPlayers: number;
 }
 
-export const SEASON_ITEMS: SeasonConfig = {
-  summer: ['Schlüssel', 'Ball', 'Pumpe', 'Überzieher', 'Handschuhe'],
-  winter: ['Hallenball', 'Pumpe', 'Überzieher']
+export interface SeasonConfig {
+  summer: SeasonSettings;
+  winter: SeasonSettings;
+}
+
+export const SEASON_CONFIG: SeasonConfig = {
+  summer: {
+    items: ['Schlüssel', 'Ball', 'Pumpe', 'Überzieher', 'Handschuhe'],
+    minPlayers: 12
+  },
+  winter: {
+    items: ['Hallenball', 'Pumpe', 'Überzieher'],
+    minPlayers: 8
+  }
 };
 
+// Hilfsfunktionen
 export function getItemsForSeason(season: Season): string[] {
-  return SEASON_ITEMS[season];
+  return SEASON_CONFIG[season].items;
+}
+
+export function getMinPlayersForSeason(season: Season): number {
+  return SEASON_CONFIG[season].minPlayers;
+}
+
+export function getSeasonSettings(season: Season): SeasonSettings {
+  return SEASON_CONFIG[season];
 }
 
 export function getItemKey(item: string): string {
   return item.toLowerCase().replace('ü', 'ue').replace('ä', 'ae').replace('ö', 'oe');
 }
 
-export function getCurrentSeason(): Season {
-  // Automatische Erkennung basierend auf Monat
-  const month = new Date().getMonth() + 1; // 1-12
-  return (month >= 4 && month <= 9) ? 'summer' : 'winter';
-}
+// getCurrentSeason() entfernt - Saison wird aus der Datenbank gelesen
