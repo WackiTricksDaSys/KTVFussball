@@ -1,5 +1,17 @@
-import { generatePassword, hashPassword, verifyPassword, isEventLocked } from '../db';
+import { generatePassword, hashPassword, verifyPassword, isEventLocked, getCurrentSeason, setCurrentSeason } from '../db';
 import { Event } from '../supabase';
+import { supabase } from '../supabase';
+
+// Mock Supabase
+jest.mock('../supabase', () => ({
+  supabase: {
+    from: jest.fn(),
+  },
+  Member: {},
+  Event: {},
+  Registration: {},
+  SchemaMigration: {},
+}));
 
 describe('Database Functions', () => {
   describe('generatePassword', () => {
@@ -86,6 +98,118 @@ describe('Database Functions', () => {
       };
       
       expect(isEventLocked(event)).toBe(true);
+    });
+  });
+
+  describe('Season Management', () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    describe('getCurrentSeason', () => {
+      it('should return summer when season is set to summer', async () => {
+        const mockFrom = jest.fn().mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({
+                data: { value: 'summer' },
+                error: null
+              })
+            })
+          })
+        });
+        (supabase.from as jest.Mock) = mockFrom;
+
+        const season = await getCurrentSeason();
+        expect(season).toBe('summer');
+      });
+
+      it('should return winter when season is set to winter', async () => {
+        const mockFrom = jest.fn().mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({
+                data: { value: 'winter' },
+                error: null
+              })
+            })
+          })
+        });
+        (supabase.from as jest.Mock) = mockFrom;
+
+        const season = await getCurrentSeason();
+        expect(season).toBe('winter');
+      });
+
+      it('should return summer as default when no data exists', async () => {
+        const mockFrom = jest.fn().mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({
+                data: null,
+                error: { message: 'Not found' }
+              })
+            })
+          })
+        });
+        (supabase.from as jest.Mock) = mockFrom;
+
+        const season = await getCurrentSeason();
+        expect(season).toBe('summer');
+      });
+    });
+
+    describe('setCurrentSeason', () => {
+      it('should update season to summer', async () => {
+        const mockFrom = jest.fn().mockReturnValue({
+          upsert: jest.fn().mockResolvedValue({
+            error: null
+          })
+        });
+        (supabase.from as jest.Mock) = mockFrom;
+
+        await setCurrentSeason('summer');
+        
+        expect(mockFrom).toHaveBeenCalledWith('settings');
+        expect(mockFrom().upsert).toHaveBeenCalledWith(
+          expect.objectContaining({
+            key: 'current_season',
+            value: 'summer'
+          }),
+          { onConflict: 'key' }
+        );
+      });
+
+      it('should update season to winter', async () => {
+        const mockFrom = jest.fn().mockReturnValue({
+          upsert: jest.fn().mockResolvedValue({
+            error: null
+          })
+        });
+        (supabase.from as jest.Mock) = mockFrom;
+
+        await setCurrentSeason('winter');
+        
+        expect(mockFrom).toHaveBeenCalledWith('settings');
+        expect(mockFrom().upsert).toHaveBeenCalledWith(
+          expect.objectContaining({
+            key: 'current_season',
+            value: 'winter'
+          }),
+          { onConflict: 'key' }
+        );
+      });
+
+      it('should throw error when update fails', async () => {
+        const mockFrom = jest.fn().mockReturnValue({
+          upsert: jest.fn().mockResolvedValue({
+            error: { message: 'Database error' }
+          })
+        });
+        (supabase.from as jest.Mock) = mockFrom;
+
+        await expect(setCurrentSeason('summer')).rejects.toThrow();
+      });
     });
   });
 });
