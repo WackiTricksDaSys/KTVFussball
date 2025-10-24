@@ -298,7 +298,6 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
           <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
             <h1 className="text-2xl font-bold text-gray-900">Anmeldung</h1>
             <div className="flex items-center gap-4">
-              <span className="text-lg font-semibold text-gray-700">{currentUser.nickname}</span>
               {/* Änderung 3: Schlüssel-Button für ALLE User */}
               <button
                 onClick={() => setShowPasswordChange(true)}
