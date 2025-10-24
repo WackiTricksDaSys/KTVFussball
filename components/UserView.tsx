@@ -12,7 +12,7 @@ import {
   updateMemberPassword,
   getCurrentSeason
 } from '@/lib/db';
-import { getItemsForSeason, getItemKey } from '@/lib/season-config';
+import { getItemsForSeason, getItemKey, getMinPlayersForSeason } from '@/lib/season-config';
 
 interface UserViewProps {
   currentUser: Member;
@@ -72,6 +72,7 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
   const loadSeasonItems = async () => {
     const season = await getCurrentSeason();
     setCurrentSeasonItems(getItemsForSeason(season));
+    setMinPlayers(getMinPlayersForSeason(season));
   };
 
   const getRegistration = (memberId: number, eventId: number) => {
@@ -82,8 +83,6 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
     const reg = getRegistration(member.id, event.id);
     const isOwn = member.id === currentUser.id;
     const locked = isEventLocked(event);
-    
-    // Änderung 2: Admin-Lock aufheben
     const isLockedForUser = locked && !currentUser.is_admin;
     
     const dateStr = new Date(event.date).toLocaleDateString('de-CH', { 
@@ -91,7 +90,6 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
       day: '2-digit', 
       month: '2-digit'
     });
-    // Änderung 1: Komma und Punkt entfernen (Position 2-3)
     const formattedDate = dateStr.slice(0, 2) + dateStr.slice(4);
     
     setEditPopup({
@@ -160,7 +158,6 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
     }
   };
 
-  // Änderung 3: Passwort ändern Handler
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordError('');
@@ -198,7 +195,6 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
     return { members: memberCount, guests: guestCount, total: memberCount + guestCount };
   };
 
-  // Sortiere Mitglieder: Aktueller User zuerst, dann alphabetisch
   const sortedMembers = [...members].sort((a, b) => {
     if (a.id === currentUser.id) return -1;
     if (b.id === currentUser.id) return 1;
@@ -209,7 +205,6 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
     return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Lädt...</div>;
   }
 
-  // Änderung 3: Passwort-Ändern Ansicht
   if (showPasswordChange) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -284,7 +279,6 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header und Navigation - BEIDE STICKY */}
       <div className="sticky top-0 z-30 bg-white">
         <div className="bg-ktv-red h-[49px] w-full">
           <img 
@@ -294,13 +288,10 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
           />
         </div>
         
-        {/* Navigation Bar */}
         <div className="bg-white shadow-sm border-b">
           <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
             <h1 className="text-2xl font-bold text-gray-900">Anmeldung</h1>
             <div className="flex items-center gap-4">
-              <span className="text-lg font-semibold text-gray-700">{currentUser.nickname}</span>
-              {/* Änderung 3: Schlüssel-Button für ALLE User */}
               <button
                 onClick={() => setShowPasswordChange(true)}
                 className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition text-gray-700"
@@ -325,7 +316,6 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
         </div>
       </div>
 
-      {/* Content */}
       <div className="max-w-7xl mx-auto p-4">
         {!currentUser.is_active && (
           <div className="mb-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-start gap-2">
@@ -349,7 +339,6 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
                       {/* Empty header cell */}
                     </th>
                     {events.map(event => {
-                      // Änderung 1: Wochentag ohne Komma und Punkt
                       const dateStr = new Date(event.date).toLocaleDateString('de-CH', { 
                         weekday: 'short', 
                         day: '2-digit', 
@@ -405,12 +394,10 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
                     );
                   })}
 
-                  {/* Trennlinie */}
                   <tr className="h-1 bg-gray-300">
                     <td colSpan={events.length + 1} className="p-0"></td>
                   </tr>
 
-                  {/* Spieler-Zeilen */}
                   {sortedMembers.map(member => {
                     const isCurrentUser = member.id === currentUser.id;
                     return (
@@ -474,7 +461,6 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
                     );
                   })}
 
-                  {/* Total-Zeile */}
                   <tr className="border-t-2 border-gray-400 bg-gray-50">
                     <td className="px-4 py-3 font-bold text-gray-900 text-lg sticky left-0 z-10 bg-gray-50 min-w-[140px] border-r border-gray-300">
                       Total
@@ -506,7 +492,6 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
         )}
       </div>
 
-      {/* Edit Popup */}
       {editPopup && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
