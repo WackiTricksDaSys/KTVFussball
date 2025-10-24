@@ -28,6 +28,7 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentSeasonItems, setCurrentSeasonItems] = useState<string[]>([]);
+  const [minPlayers, setMinPlayers] = useState<number>(12);
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -298,6 +299,7 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
           <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
             <h1 className="text-2xl font-bold text-gray-900">Anmeldung</h1>
             <div className="flex items-center gap-4">
+              <span className="text-lg font-semibold text-gray-700">{currentUser.nickname}</span>
               {/* Änderung 3: Schlüssel-Button für ALLE User */}
               <button
                 onClick={() => setShowPasswordChange(true)}
@@ -482,7 +484,7 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
                       return (
                         <td key={event.id} className="px-6 py-3 text-center min-w-[160px]">
                           <div className="font-bold text-blue-600 text-xl">
-                            {counts.total}
+                            {counts.total}/{minPlayers}
                           </div>
                           <div className="text-xs text-gray-600">
                             ({counts.members} + {counts.guests})
@@ -676,4 +678,4 @@ export default function UserView({ currentUser, onLogout, onSwitchView }: UserVi
       )}
     </div>
   );
-      }
+ }
