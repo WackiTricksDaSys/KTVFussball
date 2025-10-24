@@ -215,7 +215,7 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
         
         <div className="bg-white shadow-sm border-b">
           <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">Konfig</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Admin</h1>
             <div className="flex items-center gap-4">
               <span className="text-lg font-semibold text-gray-700">{currentUser.nickname}</span>
               <button
