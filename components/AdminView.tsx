@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, Calendar, LogOut, Trash2, Undo } from 'lucide-react';
+import { Users, Calendar, LogOut, Trash2, Table } from 'lucide-react';
 import { Member, Event } from '@/lib/supabase';
 import { Season } from '@/lib/season-config';
 import { 
@@ -223,7 +223,7 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
                 className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition text-gray-700"
                 title="Zur Anmeldeliste"
               >
-                <Undo className="w-6 h-6" />
+                <Table className="w-6 h-6" />
               </button>
               <button onClick={onLogout} className="text-gray-600 hover:text-gray-800 transition">
                 <LogOut className="w-6 h-6" />
