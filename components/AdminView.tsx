@@ -473,47 +473,49 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
 
         {/* Saison & Utensilien */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-3xl font-bold mb-6 text-gray-900">Saison & Utensilien</h2>
+          <h2 className="text-xl font-bold mb-4 flex items-center text-gray-800">
+            Saison & Utensilien
+          </h2>
           
-          <div className="grid grid-cols-2 gap-4 mb-8">
+          <div className="grid grid-cols-2 gap-4 mb-6">
             <button
               onClick={() => handleSeasonChange('summer')}
-              className={`px-8 py-6 rounded-2xl font-bold text-2xl transition flex items-center justify-center gap-3 ${
+              className={`px-4 py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2 ${
                 currentSeason === 'summer'
                   ? 'bg-orange-500 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              <span className="text-3xl">☀️</span>
+              <span>☀️</span>
               Sommer
             </button>
             <button
               onClick={() => handleSeasonChange('winter')}
-              className={`px-8 py-6 rounded-2xl font-bold text-2xl transition flex items-center justify-center gap-3 ${
+              className={`px-4 py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2 ${
                 currentSeason === 'winter'
                   ? 'bg-blue-500 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              <span className="text-3xl">❄️</span>
+              <span>❄️</span>
               Winter
             </button>
           </div>
 
-          <div className="bg-gray-50 rounded-xl p-6">
-            <h3 className="text-2xl font-bold mb-4 text-gray-900">Benötigte Utensilien:</h3>
-            <ul className="space-y-3">
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h3 className="font-semibold mb-3 text-gray-700">Benötigte Utensilien</h3>
+            <ul className="space-y-2">
               {seasonSettings.items.map(item => (
-                <li key={item} className="text-xl text-gray-700 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-gray-900 rounded-full"></span>
+                <li key={item} className="text-gray-700 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-gray-700 rounded-full"></span>
                   {item}
                 </li>
               ))}
             </ul>
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <p className="text-lg text-gray-700">
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <p className="text-gray-700">
                 <span className="font-semibold">Mindestanzahl Spieler:</span>{' '}
-                <span className="text-2xl font-bold text-blue-600">{seasonSettings.minPlayers}</span>
+                <span className="font-bold text-blue-600">{seasonSettings.minPlayers}</span>
               </p>
             </div>
           </div>
@@ -521,4 +523,4 @@ export default function AdminView({ currentUser, onLogout, onSwitchView }: Admin
       </div>
     </div>
   );
-}
+ }
